@@ -49,7 +49,7 @@ export default function HomeScreen({ stars, onPlay, equipped }: HomeScreenProps)
           Sprouty
         </h1>
         <p className="font-display text-lg text-emerald-500 font-semibold">
-          Spelling Game
+          Broccoli Power Spelling Game
         </p>
       </motion.div>
 
