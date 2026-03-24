@@ -486,12 +486,20 @@ export default function GamePlay({
 
       {/* Top bar */}
       <div className="flex items-center justify-between mb-2">
-        <button
-          onPointerDown={(e) => { e.preventDefault(); handleQuit(); }}
-          className="text-gray-400 font-display font-bold text-sm px-3 py-1 rounded-full bg-white/60 cursor-pointer"
-        >
-          ✕ Quit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onPointerDown={(e) => { e.preventDefault(); handleQuit(); }}
+            className="text-gray-400 font-display font-bold text-sm px-3 py-1 rounded-full bg-white/60 cursor-pointer"
+          >
+            ✕ Quit
+          </button>
+          <button
+            onPointerDown={(e) => { e.preventDefault(); onRetryLevel(); }}
+            className="text-gray-400 font-display font-bold text-sm px-3 py-1 rounded-full bg-white/60 cursor-pointer"
+          >
+            ↺ Reset
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           {state.mode !== 'battle' && (
