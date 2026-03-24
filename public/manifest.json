@@ -1,0 +1,22 @@
+{
+  "name": "Sprouty Spelling Game",
+  "short_name": "Sprouty",
+  "description": "A fun spelling game for kids featuring Sprouty the broccoli!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#2d8a4e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
