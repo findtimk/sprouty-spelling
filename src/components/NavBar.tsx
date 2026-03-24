@@ -7,6 +7,7 @@ export default function NavBar({ onNavigate, currentScreen }: NavBarProps) {
   const items = [
     { id: 'home', label: 'Home', icon: '🏠' },
     { id: 'shop', label: 'Shop', icon: '🛍️' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (

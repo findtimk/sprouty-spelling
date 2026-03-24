@@ -9,9 +9,10 @@ import LevelSelect from './screens/LevelSelect';
 import GamePlay from './screens/GamePlay';
 import LevelComplete from './screens/LevelComplete';
 import Shop from './screens/Shop';
+import Settings from './screens/Settings';
 import NavBar from './components/NavBar';
 
-type Screen = 'home' | 'levels' | 'playing' | 'complete' | 'shop';
+type Screen = 'home' | 'levels' | 'playing' | 'complete' | 'shop' | 'settings';
 
 interface Stars {
   total: number;
@@ -103,6 +104,13 @@ export default function App() {
     }));
   }, [setEquipped]);
 
+  const handleResetAll = useCallback(() => {
+    setStars({ total: 0, available: 0 });
+    setInventory([]);
+    setEquipped({ hat: null, accessory: null, skin: null, dance: null });
+    setProgress({ easy: 0, medium: 0, hard: 0 });
+  }, [setStars, setInventory, setEquipped, setProgress]);
+
   const handleNavigate = useCallback((target: string) => {
     if (target === 'home') {
       if (screen === 'playing') return; // Don't navigate away during game
@@ -111,6 +119,9 @@ export default function App() {
     } else if (target === 'shop') {
       if (screen === 'playing') return;
       setScreen('shop');
+    } else if (target === 'settings') {
+      if (screen === 'playing') return;
+      setScreen('settings');
     }
   }, [screen, game]);
 
@@ -187,10 +198,18 @@ export default function App() {
               onBack={() => setScreen('home')}
             />
           )}
+
+          {screen === 'settings' && (
+            <Settings
+              onResetAll={handleResetAll}
+              onBack={() => setScreen('home')}
+            />
+          )}
         </motion.div>
       </AnimatePresence>
 
       {showNav && <NavBar onNavigate={handleNavigate} currentScreen={screen === 'levels' ? 'home' : screen} />}
+
     </>
   );
 }
