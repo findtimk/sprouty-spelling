@@ -8,7 +8,7 @@ interface LevelCompleteProps {
   starsEarned: number;
   mode: GameMode;
   villainName?: string;
-  equipped: { hat?: string | null; accessory?: string | null; skin?: string | null };
+  equipped: { hat?: string | null; accessory?: string | null; skin?: string | null; dance?: string | null };
   onHome: () => void;
   onNextLevel: () => void;
 }

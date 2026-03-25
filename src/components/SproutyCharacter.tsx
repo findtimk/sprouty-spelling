@@ -11,7 +11,44 @@ interface SproutyCharacterProps {
     hat?: string | null;
     accessory?: string | null;
     skin?: string | null;
+    dance?: string | null;
   };
+}
+
+function getDanceAnimation(danceId: string): object {
+  switch (danceId) {
+    case 'dance-moon':
+      // Moonwalk: smooth glide side to side with cool lean
+      return {
+        x: [0, 25, 50, 25, 0, -25, 0],
+        rotate: [0, -8, -8, -8, 0, 8, 0],
+        transition: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' as const },
+      };
+    case 'dance-break':
+      // Breakdance: wild full-spin + big jump, fast and chaotic
+      return {
+        rotate: [0, -30, 360, 390, 360],
+        y: [0, -22, -8, -22, 0],
+        scale: [1, 1.15, 0.88, 1.15, 1],
+        transition: { repeat: Infinity, duration: 0.7, ease: 'easeInOut' as const },
+      };
+    case 'dance-wiggle':
+      // Wiggle: fast bouncy side shake
+      return {
+        rotate: [0, 22, -22, 22, -22, 0],
+        y: [0, -6, 0, -6, 0],
+        transition: { repeat: Infinity, duration: 0.5, ease: 'easeInOut' as const },
+      };
+    case 'dance-spin':
+      // Tornado Spin: continuous full 360 rotation
+      return {
+        rotate: [0, 360],
+        scale: [1, 1.08, 1],
+        transition: { repeat: Infinity, duration: 0.45, ease: 'linear' as const },
+      };
+    default:
+      return {};
+  }
 }
 
 function getEyeProps(expression: SproutyExpression) {
@@ -77,12 +114,17 @@ export default function SproutyCharacter({
     hurt:        { x: [0, -5, 5, -3, 3, 0],                      transition: { duration: 0.5 } },
   };
 
+  const activeAnimation =
+    expression === 'celebrating' && equipped?.dance
+      ? getDanceAnimation(equipped.dance)
+      : animationVariant[expression];
+
   const showCheeks = !isNinja && (expression === 'happy' || expression === 'celebrating' || expression === 'excited');
 
   return (
     <motion.div
       className={`inline-block ${className}`}
-      animate={animationVariant[expression]}
+      animate={activeAnimation}
       style={{ width: size, height: size }}
     >
       <svg
@@ -360,31 +402,117 @@ export default function SproutyCharacter({
         {/* ══════════════════════════════════════════
             HAT OVERLAY
             ══════════════════════════════════════════ */}
+        {/* ── CHEF HAT ── toque blanche with puffy balloon top */}
         {equipped?.hat === 'hat-chef' && (
           <g>
-            <rect x="32" y="2"  width="36" height="8"  rx="2" fill="white" />
-            <rect x="38" y="-6" width="24" height="10" rx="4" fill="white" />
+            {/* Brim band */}
+            <rect x="29" y="18" width="42" height="9" rx="3" fill="white" stroke="#d0d0d0" strokeWidth="0.8" />
+            {/* Band highlight */}
+            <rect x="31" y="19" width="38" height="3" rx="1.5" fill="white" opacity="0.9" />
+            {/* Balloon top — main */}
+            <ellipse cx="50" cy="7" rx="15" ry="14" fill="white" stroke="#d8d8d8" strokeWidth="0.8" />
+            {/* Balloon shadow at base for depth */}
+            <ellipse cx="50" cy="19" rx="14" ry="4" fill="#e8e8e8" opacity="0.7" />
+            {/* Balloon inner highlight */}
+            <ellipse cx="44" cy="3" rx="6" ry="7" fill="white" opacity="0.55" />
+            {/* Pleats — subtle vertical lines */}
+            <line x1="39" y1="7"  x2="38" y2="18" stroke="#c8c8c8" strokeWidth="0.7" opacity="0.7" />
+            <line x1="44" y1="4"  x2="43" y2="18" stroke="#c8c8c8" strokeWidth="0.7" opacity="0.7" />
+            <line x1="50" y1="3"  x2="50" y2="18" stroke="#c8c8c8" strokeWidth="0.7" opacity="0.7" />
+            <line x1="56" y1="4"  x2="57" y2="18" stroke="#c8c8c8" strokeWidth="0.7" opacity="0.7" />
+            <line x1="61" y1="7"  x2="62" y2="18" stroke="#c8c8c8" strokeWidth="0.7" opacity="0.7" />
           </g>
         )}
+
+        {/* ── CROWN ── regal 5-spire crown with gems */}
         {equipped?.hat === 'hat-crown' && (
           <g>
-            <polygon points="35,12 38,0 44,8 50,-2 56,8 62,0 65,12" fill="#FFD700" stroke="#B8860B" strokeWidth="1" />
-            <circle cx="44" cy="4" r="2" fill="#FF0000" />
-            <circle cx="50" cy="0" r="2" fill="#0000FF" />
-            <circle cx="56" cy="4" r="2" fill="#00FF00" />
+            {/* Base band — layered for metallic look */}
+            <rect x="31" y="11" width="38" height="8" rx="2" fill="#B8860B" />
+            <rect x="31" y="11" width="38" height="5" rx="2" fill="#FFD700" />
+            <rect x="32" y="12" width="36" height="2" rx="1" fill="#FFE88A" opacity="0.6" />
+            {/* 5 spires — outer two shorter, inner three taller, middle tallest */}
+            <polygon points="32,11 35,0  38,11" fill="#FFD700" stroke="#B8860B" strokeWidth="0.7" />
+            <polygon points="38,11 42,-5 46,11" fill="#FFD700" stroke="#B8860B" strokeWidth="0.7" />
+            <polygon points="45,11 50,-9 55,11" fill="#FFD700" stroke="#B8860B" strokeWidth="0.7" />
+            <polygon points="54,11 58,-5 62,11" fill="#FFD700" stroke="#B8860B" strokeWidth="0.7" />
+            <polygon points="62,11 65,0  68,11" fill="#FFD700" stroke="#B8860B" strokeWidth="0.7" />
+            {/* Spire highlight lines */}
+            <line x1="35" y1="11" x2="35.5" y2="2"  stroke="#FFE88A" strokeWidth="0.6" opacity="0.8" />
+            <line x1="42" y1="11" x2="43"   y2="-3" stroke="#FFE88A" strokeWidth="0.6" opacity="0.8" />
+            <line x1="50" y1="11" x2="50"   y2="-7" stroke="#FFE88A" strokeWidth="0.6" opacity="0.8" />
+            <line x1="58" y1="11" x2="57"   y2="-3" stroke="#FFE88A" strokeWidth="0.6" opacity="0.8" />
+            <line x1="65" y1="11" x2="64.5" y2="2"  stroke="#FFE88A" strokeWidth="0.6" opacity="0.8" />
+            {/* Gems — ruby, sapphire, emerald — with inner highlights */}
+            <circle cx="40" cy="15" r="3.2" fill="#CC0000" stroke="#880000" strokeWidth="0.5" />
+            <circle cx="39" cy="14" r="1.2" fill="white"   opacity="0.5" />
+            <circle cx="50" cy="15" r="3.2" fill="#0055CC" stroke="#003388" strokeWidth="0.5" />
+            <circle cx="49" cy="14" r="1.2" fill="white"   opacity="0.5" />
+            <circle cx="60" cy="15" r="3.2" fill="#007700" stroke="#004400" strokeWidth="0.5" />
+            <circle cx="59" cy="14" r="1.2" fill="white"   opacity="0.5" />
+            {/* Band top sheen */}
+            <line x1="33" y1="12" x2="67" y2="12" stroke="white" strokeWidth="0.8" opacity="0.3" />
           </g>
         )}
+
+        {/* ── PIRATE HAT ── classic bicorne with SVG skull & crossbones */}
         {equipped?.hat === 'hat-pirate' && (
           <g>
-            <ellipse cx="50" cy="12" rx="22" ry="6" fill="#1a1a1a" />
-            <path d="M 30,12 Q 50,-8 70,12" fill="#1a1a1a" />
-            <text x="46" y="8" fontSize="8" fill="white">☠</text>
+            {/* Hat main body */}
+            <path d="M 22,18 Q 28,6 50,-4 Q 72,6 78,18 Q 64,22 50,23 Q 36,22 22,18 Z" fill="#111111" />
+            {/* Brim edge highlight */}
+            <path d="M 22,18 Q 36,22 50,23 Q 64,22 78,18" stroke="#333333" strokeWidth="1.2" fill="none" />
+            {/* Brim top highlight */}
+            <path d="M 24,17 Q 50,10 76,17" stroke="#2a2a2a" strokeWidth="0.8" fill="none" opacity="0.8" />
+            {/* White band along brim */}
+            <path d="M 26,17 Q 50,21 74,17 L 72,19 Q 50,23 28,19 Z" fill="white" opacity="0.12" />
+            {/* Skull — oval head */}
+            <ellipse cx="50" cy="6" rx="7" ry="6.5" fill="white" opacity="0.92" />
+            {/* Skull cheekbones */}
+            <ellipse cx="45" cy="10" rx="3" ry="2" fill="white" opacity="0.85" />
+            <ellipse cx="55" cy="10" rx="3" ry="2" fill="white" opacity="0.85" />
+            {/* Skull eye sockets */}
+            <ellipse cx="47" cy="5.5" rx="2.2" ry="2.5" fill="#111111" />
+            <ellipse cx="53" cy="5.5" rx="2.2" ry="2.5" fill="#111111" />
+            {/* Skull nasal cavity */}
+            <path d="M 49,8.5 L 50,10 L 51,8.5" fill="#111111" opacity="0.7" />
+            {/* Skull teeth */}
+            <path d="M 45,12 L 46,11 L 47,12 L 48,11 L 49,12 L 50,11 L 51,12 L 52,11 L 53,12 L 54,11 L 55,12" stroke="#111111" strokeWidth="0.8" fill="none" opacity="0.85" />
+            {/* Crossbones — two crossing bone shapes */}
+            <line x1="43" y1="15" x2="57" y2="21" stroke="white" strokeWidth="2.2" strokeLinecap="round" opacity="0.85" />
+            <line x1="57" y1="15" x2="43" y2="21" stroke="white" strokeWidth="2.2" strokeLinecap="round" opacity="0.85" />
+            {/* Bone knobs */}
+            <circle cx="43" cy="15" r="1.8" fill="white" opacity="0.85" />
+            <circle cx="57" cy="15" r="1.8" fill="white" opacity="0.85" />
+            <circle cx="43" cy="21" r="1.8" fill="white" opacity="0.85" />
+            <circle cx="57" cy="21" r="1.8" fill="white" opacity="0.85" />
           </g>
         )}
+
+        {/* ── SPACE HELMET ── astronaut dome with golden visor */}
         {equipped?.hat === 'hat-space' && (
           <g>
-            <ellipse cx="50" cy="14" rx="18" ry="14" fill="#C0C0C0" opacity="0.8" />
-            <ellipse cx="50" cy="14" rx="14" ry="10" fill="#87CEEB" opacity="0.4" />
+            {/* Outer dome — metallic silver */}
+            <ellipse cx="50" cy="11" rx="20" ry="18" fill="#B0BEC5" stroke="#78909C" strokeWidth="1.2" />
+            {/* Inner dome shading for depth */}
+            <ellipse cx="50" cy="12" rx="17" ry="15" fill="#CFD8DC" opacity="0.5" />
+            {/* Visor — warm golden amber (classic astronaut tint) */}
+            <ellipse cx="50" cy="12" rx="13" ry="11" fill="#FF8F00" opacity="0.35" />
+            <ellipse cx="50" cy="12" rx="13" ry="11" fill="#FFD54F" opacity="0.2" />
+            {/* Visor frame ring */}
+            <ellipse cx="50" cy="12" rx="13" ry="11" fill="none" stroke="#546E7A" strokeWidth="1.4" />
+            {/* Side bolts */}
+            <circle cx="31" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
+            <circle cx="31" cy="12" r="1.2" fill="#B0BEC5" />
+            <circle cx="69" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
+            <circle cx="69" cy="12" r="1.2" fill="#B0BEC5" />
+            {/* Dome highlight — crescent in upper-left for 3D sphere lighting */}
+            <ellipse cx="41" cy="4" rx="7" ry="5" fill="white" opacity="0.38" transform="rotate(-20, 41, 4)" />
+            {/* Small secondary highlight */}
+            <ellipse cx="37" cy="7" rx="3" ry="2" fill="white" opacity="0.25" />
+            {/* Bottom neck ring */}
+            <rect x="33" y="26" width="34" height="5" rx="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.8" />
+            <rect x="35" y="27" width="30" height="2" rx="1" fill="#90A4AE" opacity="0.6" />
           </g>
         )}
 
