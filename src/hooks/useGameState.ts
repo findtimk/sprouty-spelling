@@ -5,6 +5,44 @@ import { getVillainForLevel, type Villain } from '../game/villains';
 import { shuffle } from '../utils/shuffle';
 
 const WORDS_PER_LEVEL = 12;
+const SEEN_WORDS_KEY = 'sprouty_seen_words';
+
+/** Pick words prioritizing ones the user hasn't seen recently */
+function pickFreshWords(allWords: WordEntry[], difficulty: Difficulty, count: number): WordEntry[] {
+  // Load seen words from localStorage
+  let seenMap: Record<string, string[]> = {};
+  try {
+    const stored = window.localStorage.getItem(SEEN_WORDS_KEY);
+    if (stored) seenMap = JSON.parse(stored);
+  } catch { /* ignore */ }
+
+  const seenSet = new Set(seenMap[difficulty] || []);
+
+  // Split into unseen and seen
+  const unseen = allWords.filter(w => !seenSet.has(w.word));
+  const seen = allWords.filter(w => seenSet.has(w.word));
+
+  let picked: WordEntry[];
+  if (unseen.length >= count) {
+    // Plenty of fresh words — pick randomly from unseen only
+    picked = shuffle(unseen).slice(0, count);
+  } else {
+    // Use all unseen words, then fill from seen (shuffled for variety)
+    picked = [...shuffle(unseen), ...shuffle(seen)].slice(0, count);
+    // Reset the seen list since we've exhausted the pool
+    seenMap[difficulty] = [];
+  }
+
+  // Record these words as seen
+  const currentSeen = seenMap[difficulty] || [];
+  const newSeen = [...currentSeen, ...picked.map(w => w.word)];
+  seenMap[difficulty] = newSeen;
+  try {
+    window.localStorage.setItem(SEEN_WORDS_KEY, JSON.stringify(seenMap));
+  } catch { /* ignore */ }
+
+  return shuffle(picked);
+}
 
 export type GamePhase = 'playing' | 'correct' | 'wrong' | 'level-complete' | 'battle-attack' | 'battle-villain-attack' | 'battle-defeat';
 
@@ -60,8 +98,7 @@ export function useGameState() {
 
   const startLevel = useCallback((difficulty: Difficulty, levelIndex: number) => {
     const allWords = wordsByDifficulty[difficulty];
-    const shuffled = shuffle(allWords);
-    const levelWords = shuffled.slice(0, WORDS_PER_LEVEL);
+    const levelWords = pickFreshWords(allWords, difficulty, WORDS_PER_LEVEL);
     const mode = getModeForLevel(levelIndex);
     const firstWord = levelWords[0];
 
