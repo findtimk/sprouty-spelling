@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type TargetAndTransition } from 'framer-motion';
 
 export type SproutyExpression = 'happy' | 'excited' | 'worried' | 'determined' | 'celebrating' | 'dizzy' | 'hurt';
 
@@ -15,7 +15,7 @@ interface SproutyCharacterProps {
   };
 }
 
-function getDanceAnimation(danceId: string): object {
+function getDanceAnimation(danceId: string): TargetAndTransition {
   switch (danceId) {
     case 'dance-moon':
       // Moonwalk: smooth glide side to side with cool lean
