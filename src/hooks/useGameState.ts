@@ -4,7 +4,7 @@ import { type GameMode, getModeForLevel } from '../game/modes';
 import { getVillainForLevel, type Villain } from '../game/villains';
 import { shuffle } from '../utils/shuffle';
 
-const WORDS_PER_LEVEL = 12;
+const WORDS_PER_LEVEL = 10;
 const SEEN_WORDS_KEY = 'sprouty_seen_words';
 
 /** Pick words prioritizing ones the user hasn't seen recently */
@@ -62,6 +62,7 @@ export interface GameState {
   placedLetters: (LetterTileData | null)[];
   phase: GamePhase;
   starsEarnedThisLevel: number;
+  wordStreak: number;
   // Mode-specific
   growthPercent: number;
   rocketFuel: number;
@@ -114,6 +115,7 @@ export function useGameState() {
       placedLetters: new Array(firstWord.word.length).fill(null),
       phase: 'playing',
       starsEarnedThisLevel: 0,
+      wordStreak: 0,
       growthPercent: 0,
       rocketFuel: 0,
       stackHeight: 0,
@@ -194,6 +196,7 @@ export function useGameState() {
       setState(prev => {
         if (!prev) return prev;
         const newStars = prev.starsEarnedThisLevel + 1;
+        const newStreak = prev.wordStreak + 1;
         const isLastWord = prev.currentWordIndex >= prev.words.length - 1;
 
         if (prev.mode === 'battle') {
@@ -202,6 +205,7 @@ export function useGameState() {
             ...prev,
             phase: 'battle-attack',
             starsEarnedThisLevel: newStars,
+            wordStreak: newStreak,
             villainHealth: newVillainHealth,
           };
         }
@@ -210,6 +214,7 @@ export function useGameState() {
           ...prev,
           phase: isLastWord ? 'level-complete' : 'correct',
           starsEarnedThisLevel: newStars,
+          wordStreak: newStreak,
           growthPercent: prev.growthPercent + (100 / prev.words.length),
           rocketFuel: prev.rocketFuel + (100 / prev.words.length),
           stackHeight: prev.stackHeight + 1,
@@ -223,16 +228,17 @@ export function useGameState() {
         if (prev.mode === 'battle') {
           const newHealth = prev.playerHealth - 1;
           if (newHealth <= 0) {
-            return { ...prev, phase: 'battle-defeat' };
+            return { ...prev, phase: 'battle-defeat', wordStreak: 0 };
           }
           return {
             ...prev,
             phase: 'battle-villain-attack',
             playerHealth: newHealth,
+            wordStreak: 0,
           };
         }
 
-        return { ...prev, phase: 'wrong' };
+        return { ...prev, phase: 'wrong', wordStreak: 0 };
       });
       return 'wrong';
     }

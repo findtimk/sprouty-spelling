@@ -7,6 +7,7 @@ interface SproutyCharacterProps {
   scale?: number;
   className?: string;
   size?: number;
+  inflated?: number;
   equipped?: {
     hat?: string | null;
     accessory?: string | null;
@@ -119,12 +120,16 @@ export default function SproutyCharacter({
   scale = 1,
   className = '',
   size = 120,
+  inflated = 0,
   equipped,
 }: SproutyCharacterProps) {
   const eyes      = getEyeProps(expression);
   const mouthPath = getMouthPath(expression);
   const colors    = getSkinColors(equipped?.skin);
   const skinId    = equipped?.skin ?? null;
+  // Balloon inflation: body gets rounder/wider as growthPercent increases
+  const inflateX = 1 + (inflated / 100) * 0.25;
+  const inflateY = 1 + (inflated / 100) * 0.12;
 
   const isNinja   = skinId === 'skin-ninja';
   const isRobot   = skinId === 'skin-robot';
@@ -157,6 +162,66 @@ export default function SproutyCharacter({
       ? getDanceAnimation(equipped.dance)
       : animationVariant[expression];
 
+  const isDancing = expression === 'celebrating' && !!equipped?.dance;
+
+  // Dance limb pose sequences
+  // Arm paths use M X,Y Q CX,CY EX,EY — same structure enables FM interpolation
+  const ARMS_NEUTRAL = { left: 'M 26,57 Q 18,50 14,54', right: 'M 74,57 Q 82,50 86,54' };
+  const ARMS_UP      = { left: 'M 26,57 Q 18,38 12,36', right: 'M 74,57 Q 82,38 88,36' };
+  const ARMS_SPREAD  = { left: 'M 26,57 Q 14,55 8,58',  right: 'M 74,57 Q 86,55 92,58' };
+  const ARM_L_UP_R_OUT = { left: 'M 26,57 Q 18,38 12,36', right: 'M 74,57 Q 86,55 92,58' };
+
+  let leftArmFrames: string[]  = [ARMS_NEUTRAL.left];
+  let rightArmFrames: string[] = [ARMS_NEUTRAL.right];
+  let leftFootCxFrames: number[]  = [40];
+  let leftFootCyFrames: number[]  = [92];
+  let rightFootCxFrames: number[] = [60];
+  let rightFootCyFrames: number[] = [92];
+  let leftArmDuration  = 0.8;
+  let rightArmDuration = 0.8;
+  let footDuration     = 0.8;
+
+  if (isDancing) {
+    switch (equipped!.dance) {
+      case 'dance-moon':
+        leftArmFrames  = [ARMS_NEUTRAL.left,  ARM_L_UP_R_OUT.left,  ARMS_NEUTRAL.left,  ARMS_SPREAD.left,  ARMS_NEUTRAL.left];
+        rightArmFrames = [ARMS_NEUTRAL.right, ARM_L_UP_R_OUT.right, ARMS_NEUTRAL.right, ARMS_SPREAD.right, ARMS_NEUTRAL.right];
+        leftFootCxFrames  = [40, 36, 40, 44, 40];
+        leftFootCyFrames  = [92, 89, 92, 92, 92];
+        rightFootCxFrames = [60, 60, 64, 60, 60];
+        rightFootCyFrames = [92, 92, 92, 89, 92];
+        leftArmDuration = rightArmDuration = footDuration = 1.6;
+        break;
+      case 'dance-break':
+        leftArmFrames  = [ARMS_NEUTRAL.left,  ARMS_UP.left,  ARM_L_UP_R_OUT.left,  ARMS_UP.left,  ARMS_NEUTRAL.left];
+        rightArmFrames = [ARMS_NEUTRAL.right, ARMS_UP.right, ARM_L_UP_R_OUT.right, ARMS_UP.right, ARMS_NEUTRAL.right];
+        leftFootCxFrames  = [40, 38, 42, 38, 40];
+        leftFootCyFrames  = [92, 88, 92, 88, 92];
+        rightFootCxFrames = [60, 62, 58, 62, 60];
+        rightFootCyFrames = [92, 92, 88, 92, 92];
+        leftArmDuration = rightArmDuration = footDuration = 0.7;
+        break;
+      case 'dance-wiggle':
+        leftArmFrames  = [ARMS_NEUTRAL.left,  ARMS_SPREAD.left,  ARMS_NEUTRAL.left];
+        rightArmFrames = [ARMS_NEUTRAL.right, ARMS_SPREAD.right, ARMS_NEUTRAL.right];
+        leftFootCxFrames  = [40, 40, 40];
+        leftFootCyFrames  = [92, 92, 92];
+        rightFootCxFrames = [60, 60, 60];
+        rightFootCyFrames = [92, 92, 92];
+        leftArmDuration = rightArmDuration = footDuration = 0.5;
+        break;
+      case 'dance-spin':
+        leftArmFrames  = [ARMS_SPREAD.left,  ARMS_SPREAD.left];
+        rightArmFrames = [ARMS_SPREAD.right, ARMS_SPREAD.right];
+        leftFootCxFrames  = [40, 40];
+        leftFootCyFrames  = [92, 92];
+        rightFootCxFrames = [60, 60];
+        rightFootCyFrames = [92, 92];
+        leftArmDuration = rightArmDuration = footDuration = 0.45;
+        break;
+    }
+  }
+
   const showCheeks = !isNinja && (expression === 'happy' || expression === 'celebrating' || expression === 'excited');
 
   return (
@@ -169,8 +234,70 @@ export default function SproutyCharacter({
         viewBox="0 0 100 110"
         width={size}
         height={size}
+        overflow="visible"
         style={{ transform: `scale(${scale})`, transformOrigin: 'center bottom' }}
       >
+        {/* ══ SKIN GRADIENT DEFS (skin-namespaced IDs to prevent collisions) ══ */}
+        <defs>
+          {isGold && (
+            <>
+              <linearGradient id="sprouty-gold-bodyGrad" x1="15%" y1="0%" x2="85%" y2="100%">
+                <stop offset="0%"   stopColor="#FFF176" />
+                <stop offset="40%"  stopColor="#FFD700" />
+                <stop offset="100%" stopColor="#B8860B" />
+              </linearGradient>
+              <radialGradient id="sprouty-gold-sheenGrad" cx="35%" cy="30%" r="55%">
+                <stop offset="0%"   stopColor="white" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="white" stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id="sprouty-gold-floretGrad" cx="35%" cy="30%" r="60%">
+                <stop offset="0%"   stopColor="#FFFDE7" />
+                <stop offset="100%" stopColor="#FFD700" />
+              </radialGradient>
+            </>
+          )}
+          {isRainbow && (
+            <>
+              <linearGradient id="sprouty-rainbow-bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"    stopColor="#FF6B6B" />
+                <stop offset="20%"   stopColor="#FF9F43" />
+                <stop offset="40%"   stopColor="#FFD93D" />
+                <stop offset="60%"   stopColor="#6BCB77" />
+                <stop offset="80%"   stopColor="#4D96FF" />
+                <stop offset="100%"  stopColor="#C77DFF" />
+              </linearGradient>
+            </>
+          )}
+          {isNinja && (
+            <>
+              <linearGradient id="sprouty-ninja-bodyGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%"   stopColor="#242B4A" />
+                <stop offset="100%" stopColor="#080C18" />
+              </linearGradient>
+              <linearGradient id="sprouty-ninja-bandGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stopColor="#FF3333" />
+                <stop offset="100%" stopColor="#880000" />
+              </linearGradient>
+            </>
+          )}
+          {isRobot && (
+            <>
+              <linearGradient id="sprouty-robot-bodyGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%"   stopColor="#D8EEF8" />
+                <stop offset="50%"  stopColor="#8EAABF" />
+                <stop offset="100%" stopColor="#4E6A7E" />
+              </linearGradient>
+              <linearGradient id="sprouty-robot-panelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stopColor="#3A5A6E" />
+                <stop offset="100%" stopColor="#5E7A8E" />
+              </linearGradient>
+              <radialGradient id="sprouty-robot-antennaBulbGrad" cx="40%" cy="35%" r="55%">
+                <stop offset="0%"   stopColor="#FF9999" />
+                <stop offset="100%" stopColor="#CC0000" />
+              </radialGradient>
+            </>
+          )}
+        </defs>
 
         {/* ══════════════════════════════════════════
             TOP DECORATION  (florets / topknot / antenna)
@@ -192,14 +319,14 @@ export default function SproutyCharacter({
         {!hatEquipped && isGold && (
           <g>
             {/* Outer petals */}
-            <circle cx="50" cy="16" r="12" fill="#FFD700" />
-            <circle cx="38" cy="20" r="9"  fill="#FFE44D" />
-            <circle cx="62" cy="20" r="9"  fill="#FFE44D" />
+            <circle cx="50" cy="16" r="12" fill="url(#sprouty-gold-floretGrad)" />
+            <circle cx="38" cy="20" r="9"  fill="url(#sprouty-gold-floretGrad)" />
+            <circle cx="62" cy="20" r="9"  fill="url(#sprouty-gold-floretGrad)" />
             <circle cx="43" cy="10" r="8"  fill="#FFC107" />
             <circle cx="57" cy="10" r="8"  fill="#FFC107" />
-            <circle cx="50" cy="5"  r="6"  fill="#FFD700" />
+            <circle cx="50" cy="5"  r="6"  fill="url(#sprouty-gold-floretGrad)" />
             {/* Inner shine */}
-            <circle cx="50" cy="14" r="6"  fill="#FFFACD" opacity="0.5" />
+            <circle cx="50" cy="14" r="6"  fill="#FFFACD" opacity="0.6" />
             {/* Star sparkles */}
             <circle cx="27" cy="24" r="2.5" fill="#FFD700" opacity="0.9" />
             <circle cx="73" cy="24" r="2.5" fill="#FFD700" opacity="0.9" />
@@ -227,9 +354,9 @@ export default function SproutyCharacter({
             {/* Topknot bun */}
             <ellipse cx="50" cy="21" rx="7"  ry="9" fill="#1C2340" />
             <ellipse cx="50" cy="19" rx="5"  ry="6" fill="#0D1020" />
-            {/* Hair tie (red band around bun base) */}
-            <rect x="43" y="26" width="14" height="3" rx="1.5" fill="#CC0000" />
-            <rect x="44" y="26.5" width="12" height="1.5" rx="0.8" fill="#FF4444" opacity="0.5" />
+            {/* Hair tie (red band around bun base) — gradient for silk sheen */}
+            <rect x="43" y="26" width="14" height="3" rx="1.5" fill="url(#sprouty-ninja-bandGrad)" />
+            <rect x="44" y="26.5" width="12" height="1.5" rx="0.8" fill="#FF6666" opacity="0.4" />
           </g>
         )}
 
@@ -238,9 +365,14 @@ export default function SproutyCharacter({
           <g>
             {/* Antenna shaft */}
             <line x1="50" y1="8" x2="50" y2="30" stroke={colors.dark} strokeWidth="3" strokeLinecap="round" />
-            {/* Antenna LED bulb */}
-            <circle cx="50" cy="6"  r="5"   fill="#FF3333" />
-            <circle cx="50" cy="5"  r="2.5" fill="#FF9999" />
+            {/* Antenna LED bulb — glass gradient look */}
+            <circle cx="50" cy="6"  r="5"   fill="url(#sprouty-robot-antennaBulbGrad)" />
+            <circle cx="50" cy="5"  r="2"   fill="#FFB8B8" opacity="0.7" />
+            {/* Blinking center */}
+            <motion.circle cx="50" cy="6" r="2.5" fill="#FF6666"
+              animate={{ opacity: [1, 0.25, 1] }}
+              transition={{ repeat: Infinity, duration: 0.9 }}
+            />
             {/* Head bolts */}
             <circle cx="30" cy="36" r="3.5" fill={colors.dark}  />
             <circle cx="30" cy="36" r="2"   fill={colors.light} />
@@ -329,11 +461,37 @@ export default function SproutyCharacter({
         {/* ══════════════════════════════════════════
             BODY
             ══════════════════════════════════════════ */}
-        <ellipse cx="50" cy="62" rx="24" ry="30" fill={colors.main} />
-        {/* Body sheen */}
-        <ellipse cx="50" cy="64" rx="20" ry="26" fill={colors.light} opacity="0.25" />
+        <ellipse
+          cx="50" cy="62"
+          rx={24 * inflateX} ry={30 * inflateY}
+          fill={
+            isGold    ? 'url(#sprouty-gold-bodyGrad)'    :
+            isRainbow ? 'url(#sprouty-rainbow-bodyGrad)' :
+            isNinja   ? 'url(#sprouty-ninja-bodyGrad)'   :
+            isRobot   ? 'url(#sprouty-robot-bodyGrad)'   :
+            colors.main
+          }
+        />
+        {/* Body sheen — radial for gold, flat for others */}
+        {isGold ? (
+          <ellipse cx="50" cy="60" rx={22 * inflateX} ry={28 * inflateY} fill="url(#sprouty-gold-sheenGrad)" />
+        ) : (
+          <ellipse cx="50" cy="64" rx={20 * inflateX} ry={26 * inflateY} fill={colors.light} opacity="0.25" />
+        )}
+        {/* Ninja ambient edge highlight */}
+        {isNinja && (
+          <path d="M 27,48 Q 23,62 26,76" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.12" />
+        )}
+        {/* Robot brushed-metal striations */}
+        {isRobot && (
+          <>
+            <ellipse cx="50" cy="52" rx={16 * inflateX} ry="2" fill={colors.light} opacity="0.08" />
+            <ellipse cx="50" cy="62" rx={18 * inflateX} ry="2" fill={colors.light} opacity="0.08" />
+            <ellipse cx="50" cy="72" rx={16 * inflateX} ry="2" fill={colors.light} opacity="0.08" />
+          </>
+        )}
 
-        {/* GOLD body sparkles */}
+        {/* GOLD body sparkles + shimmer sweep */}
         {isGold && (
           <g>
             <ellipse cx="41" cy="50" rx="5" ry="10" fill="white" opacity="0.12" />
@@ -341,16 +499,32 @@ export default function SproutyCharacter({
             <circle cx="79" cy="55" r="2"   fill="#FFD700" opacity="0.8" />
             <circle cx="20" cy="70" r="1.5" fill="#FFE44D" opacity="0.7" />
             <circle cx="80" cy="70" r="1.5" fill="#FFE44D" opacity="0.7" />
+            {/* Shimmer sweep — animated diagonal white band */}
+            <clipPath id="sprouty-gold-bodyClip">
+              <ellipse cx="50" cy="62" rx={24 * inflateX} ry={30 * inflateY} />
+            </clipPath>
+            <motion.rect
+              height="90" width="16" rx="4"
+              fill="white" opacity="0.22"
+              style={{ rotate: '-25deg', originX: '50%', originY: '50%' } as React.CSSProperties}
+              clipPath="url(#sprouty-gold-bodyClip)"
+              animate={{ x: [-30, 90] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut', repeatDelay: 1 }}
+            />
           </g>
         )}
 
         {/* ROBOT chest panel */}
         {isRobot && (
           <g>
-            {/* Panel housing */}
-            <rect x="36" y="67" width="28" height="18" rx="3" fill={colors.dark} opacity="0.85" />
-            {/* Status LEDs */}
-            <circle cx="42" cy="73" r="2.8" fill="#00FF88" />
+            {/* Panel housing with gradient for depth */}
+            <rect x="36" y="67" width="28" height="18" rx="3" fill="url(#sprouty-robot-panelGrad)" />
+            <rect x="37" y="68" width="26" height="2" rx="1" fill={colors.light} opacity="0.2" />
+            {/* Status LEDs — green breathes */}
+            <motion.circle cx="42" cy="73" r="2.8" fill="#00FF88"
+              animate={{ opacity: [0.9, 0.4, 0.9] }}
+              transition={{ repeat: Infinity, duration: 1.6 }}
+            />
             <circle cx="50" cy="73" r="2.8" fill="#FFCC00" />
             <circle cx="58" cy="73" r="2.8" fill="#FF4444" />
             {/* Speaker grille lines */}
@@ -539,10 +713,27 @@ export default function SproutyCharacter({
         )}
 
         {/* ══════════════════════════════════════════
-            ARMS
+            ARMS — animated when dancing
             ══════════════════════════════════════════ */}
-        <path d="M 26,57 Q 18,50 14,54" stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
-        <path d="M 74,57 Q 82,50 86,54" stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+        {isDancing ? (
+          <>
+            <motion.path
+              stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round"
+              animate={{ d: leftArmFrames }}
+              transition={{ repeat: Infinity, duration: leftArmDuration, ease: 'easeInOut' }}
+            />
+            <motion.path
+              stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round"
+              animate={{ d: rightArmFrames }}
+              transition={{ repeat: Infinity, duration: rightArmDuration, ease: 'easeInOut' }}
+            />
+          </>
+        ) : (
+          <>
+            <path d="M 26,57 Q 18,50 14,54" stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+            <path d="M 74,57 Q 82,50 86,54" stroke={colors.dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+          </>
+        )}
 
         {/* Robot arm joint circles */}
         {isRobot && (
@@ -553,10 +744,27 @@ export default function SproutyCharacter({
         )}
 
         {/* ══════════════════════════════════════════
-            FEET
+            FEET — animated when dancing
             ══════════════════════════════════════════ */}
-        <ellipse cx="40" cy="92" rx="8" ry="4" fill={colors.dark} />
-        <ellipse cx="60" cy="92" rx="8" ry="4" fill={colors.dark} />
+        {isDancing ? (
+          <>
+            <motion.ellipse
+              rx="8" ry="4" fill={colors.dark}
+              animate={{ cx: leftFootCxFrames, cy: leftFootCyFrames }}
+              transition={{ repeat: Infinity, duration: footDuration, ease: 'easeInOut' }}
+            />
+            <motion.ellipse
+              rx="8" ry="4" fill={colors.dark}
+              animate={{ cx: rightFootCxFrames, cy: rightFootCyFrames }}
+              transition={{ repeat: Infinity, duration: footDuration, ease: 'easeInOut' }}
+            />
+          </>
+        ) : (
+          <>
+            <ellipse cx="40" cy="92" rx="8" ry="4" fill={colors.dark} />
+            <ellipse cx="60" cy="92" rx="8" ry="4" fill={colors.dark} />
+          </>
+        )}
 
         {/* ══════════════════════════════════════════
             HAT OVERLAY

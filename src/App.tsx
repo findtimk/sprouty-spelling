@@ -180,6 +180,7 @@ export default function App() {
           {screen === 'complete' && game.state && (
             <LevelComplete
               starsEarned={game.state.starsEarnedThisLevel}
+              wordsTotal={game.state.words.length}
               mode={game.state.mode}
               villainName={game.state.villain?.name}
               equipped={equipped}

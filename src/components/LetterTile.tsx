@@ -7,10 +7,22 @@ interface LetterTileProps {
   placed?: boolean;
   variant?: 'available' | 'slot' | 'slot-empty';
   shaking?: boolean;
+  highlighted?: boolean;
 }
 
-export default function LetterTile({ letter, onTap, disabled, placed, variant = 'available', shaking }: LetterTileProps) {
+export default function LetterTile({ letter, onTap, disabled, placed, variant = 'available', shaking, highlighted }: LetterTileProps) {
   if (variant === 'slot-empty') {
+    if (highlighted) {
+      return (
+        <motion.div
+          className="w-11 h-12 sm:w-12 sm:h-14 rounded-xl border-2 border-amber-400 bg-amber-100 flex items-center justify-center font-display font-bold text-xl sm:text-2xl text-amber-700"
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ repeat: Infinity, duration: 0.6 }}
+        >
+          {letter}
+        </motion.div>
+      );
+    }
     return (
       <div className="w-11 h-12 sm:w-12 sm:h-14 rounded-xl border-2 border-dashed border-emerald-300 bg-white/50 flex items-center justify-center" />
     );
