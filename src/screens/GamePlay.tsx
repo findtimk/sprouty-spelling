@@ -14,6 +14,9 @@ const FUN_PHRASES = [
   'Awesome!', 'You rock!', 'Nailed it!', 'Woohoo!',
   'Super speller!', 'Amazing!', 'Boom!', 'Yes yes yes!',
   'Incredible!', 'Way to go!', 'Genius!', 'Wow!',
+  'LEGENDARY!', 'Spelling champ!', 'Magic!', 'Unstoppable!',
+  'Word wizard!', 'Spectacular!', 'Blazing!', 'On fire!',
+  'Too easy!', 'Masterpiece!', 'Pure talent!', 'Sensational!',
 ];
 
 const COMIC_HITS = ['POW!', 'BAM!', 'WHAM!', 'BONK!', 'ZAP!', 'KAPOW!'];
@@ -340,6 +343,120 @@ function ComicHitText({ show }: { show: boolean }) {
   );
 }
 
+/** 8 stars radiating outward from center */
+function StarBurst() {
+  const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+  return (
+    <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center" style={{ top: '35%' }}>
+      {angles.map((angle, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-xl"
+          initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
+          animate={{
+            x: Math.cos((angle * Math.PI) / 180) * 70,
+            y: Math.sin((angle * Math.PI) / 180) * 70,
+            opacity: 0,
+            scale: 1.5,
+          }}
+          transition={{ duration: 0.8, delay: i * 0.04, ease: 'easeOut' }}
+        >
+          ⭐
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/** Expanding rainbow-colored rings */
+function RainbowRings() {
+  const rings = [
+    { color: '#FF6B6B', delay: 0,    size: 60  },
+    { color: '#FFD700', delay: 0.15, size: 90  },
+    { color: '#4ADE80', delay: 0.3,  size: 120 },
+  ];
+  return (
+    <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center" style={{ top: '35%' }}>
+      {rings.map((ring, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full"
+          style={{ border: `4px solid ${ring.color}` }}
+          initial={{ width: 0, height: 0, opacity: 0.9, marginLeft: 0, marginTop: 0 }}
+          animate={{
+            width:      ring.size,
+            height:     ring.size,
+            opacity:    0,
+            marginLeft: -ring.size / 2,
+            marginTop:  -ring.size / 2,
+          }}
+          transition={{ duration: 0.9, delay: ring.delay, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Mode-appropriate emojis cascade down */
+const SHOWER_EMOJIS: Record<string, string[]> = {
+  growth: ['🌱', '🌿', '🥦', '💚', '🌱'],
+  battle: ['⚔️', '💥', '🛡️', '⚡', '💢'],
+  rocket: ['🚀', '🔥', '⭐', '💫', '🌟'],
+  stack:  ['🥕', '🌽', '🍅', '🥒', '🫑'],
+};
+
+function EmojiShower({ mode }: { mode: string }) {
+  const emojis = SHOWER_EMOJIS[mode] ?? ['⭐', '✨', '🌟', '💫', '⭐'];
+  return (
+    <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+      {emojis.map((emoji, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-2xl"
+          style={{ left: `${10 + i * 18}%`, top: '-10%' }}
+          initial={{ y: 0, opacity: 1, rotate: 0 }}
+          animate={{ y: 280, opacity: [1, 1, 0], rotate: (i % 2 === 0 ? 1 : -1) * 180 }}
+          transition={{ duration: 0.9, delay: i * 0.07, ease: 'easeIn' }}
+        >
+          {emoji}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/** 6 sparkles orbit around Sprouty */
+function SparkleOrbit() {
+  const startAngles = [0, 60, 120, 180, 240, 300];
+  return (
+    <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center" style={{ top: '35%' }}>
+      {startAngles.map((startAngle, i) => {
+        const r = 52;
+        const pts = [0, 90, 180, 270].map(offset => ({
+          x: Math.cos(((startAngle + offset) * Math.PI) / 180) * (r + (offset > 90 ? 6 : 0)),
+          y: Math.sin(((startAngle + offset) * Math.PI) / 180) * (r + (offset > 90 ? 6 : 0)),
+        }));
+        return (
+          <motion.div
+            key={i}
+            className="absolute text-base"
+            initial={{ x: pts[0].x, y: pts[0].y, opacity: 0, scale: 0 }}
+            animate={{
+              x: [pts[0].x, pts[1].x, pts[2].x, pts[3].x],
+              y: [pts[0].y, pts[1].y, pts[2].y, pts[3].y],
+              opacity: [0, 1, 1, 0],
+              scale:   [0, 1.3, 1, 0],
+            }}
+            transition={{ duration: 1.0, delay: i * 0.05, ease: 'linear' }}
+          >
+            ✨
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Speech bubble for riddle hints */
 function SpeechBubble({ text, wordKey }: { text: string; wordKey: string }) {
   return (
@@ -379,6 +496,7 @@ export default function GamePlay({
   const [showComicHit, setShowComicHit] = useState(false);
   const [showSproing, setShowSproing] = useState(false);
   const [villainReaction, setVillainReaction] = useState('');
+  const [celebrationEffect, setCelebrationEffect] = useState(-1);
   const phraseIndex = useRef(0);
 
   // Auto-check when all slots filled
@@ -407,6 +525,11 @@ export default function GamePlay({
       // Show mini confetti
       setShowMiniConfetti(true);
       setTimeout(() => setShowMiniConfetti(false), 800);
+
+      // Cycle through celebration effects
+      const effectType = phraseIndex.current % 4;
+      setCelebrationEffect(effectType);
+      setTimeout(() => setCelebrationEffect(-1), 1000);
 
       // Growth mode: show sproing
       if (state.mode === 'growth') {
@@ -478,6 +601,14 @@ export default function GamePlay({
 
       {/* Mini confetti burst */}
       <MiniConfetti active={showMiniConfetti} />
+
+      {/* Cycling celebration effects */}
+      <AnimatePresence>
+        {celebrationEffect === 0 && <StarBurst key="starburst" />}
+        {celebrationEffect === 1 && <RainbowRings key="rainbowrings" />}
+        {celebrationEffect === 2 && <EmojiShower key="emojishower" mode={state.mode} />}
+        {celebrationEffect === 3 && <SparkleOrbit key="sparkleorbit" />}
+      </AnimatePresence>
 
       {/* Comic hit text for battle mode */}
       <AnimatePresence>

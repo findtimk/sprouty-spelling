@@ -15,24 +15,39 @@ export const shopItems: ShopItem[] = [
   { id: 'hat-crown', name: 'Royal Crown', category: 'hat', cost: 5, emoji: '👑', description: 'Spelling royalty!' },
   { id: 'hat-pirate', name: 'Pirate Hat', category: 'hat', cost: 5, emoji: '🏴‍☠️', description: 'Arrr, spell that!' },
   { id: 'hat-space', name: 'Space Helmet', category: 'hat', cost: 5, emoji: '🪖', description: 'To infinity!' },
+  { id: 'hat-cowboy', name: 'Cowboy Hat', category: 'hat', cost: 5, emoji: '🤠', description: 'Yeehaw, partner!' },
+  { id: 'hat-wizard', name: 'Wizard Hat', category: 'hat', cost: 5, emoji: '🧙', description: 'Hocus pocus spell!' },
+  { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 5, emoji: '🎉', description: "Let's celebrate!" },
+  { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 5, emoji: '🎩', description: 'Very distinguished!' },
 
   // Accessories (8 stars)
   { id: 'acc-sunglasses', name: 'Cool Shades', category: 'accessory', cost: 8, emoji: '😎', description: 'Too cool for school' },
   { id: 'acc-cape', name: 'Super Cape', category: 'accessory', cost: 8, emoji: '🦸', description: 'Super speller!' },
   { id: 'acc-bowtie', name: 'Fancy Bowtie', category: 'accessory', cost: 8, emoji: '🎀', description: 'Looking sharp!' },
   { id: 'acc-wand', name: 'Magic Wand', category: 'accessory', cost: 8, emoji: '🪄', description: 'Spell-casting!' },
+  { id: 'acc-headphones', name: 'Headphones', category: 'accessory', cost: 8, emoji: '🎧', description: 'Beats while you spell!' },
+  { id: 'acc-flowers', name: 'Flower Crown', category: 'accessory', cost: 8, emoji: '🌸', description: "Bloomin' brilliant!" },
+  { id: 'acc-lightning', name: 'Lightning Bolt', category: 'accessory', cost: 8, emoji: '⚡', description: 'Electrifying speller!' },
+  { id: 'acc-trophy', name: 'Trophy', category: 'accessory', cost: 8, emoji: '🏆', description: 'Champion speller!' },
 
   // Skins (12 stars)
   { id: 'skin-gold', name: 'Golden Sprouty', category: 'skin', cost: 12, emoji: '✨', description: 'Pure gold!' },
   { id: 'skin-rainbow', name: 'Rainbow Sprouty', category: 'skin', cost: 12, emoji: '🌈', description: 'All the colors!' },
   { id: 'skin-ninja', name: 'Ninja Sprouty', category: 'skin', cost: 12, emoji: '🥷', description: 'Silent but deadly!' },
   { id: 'skin-robot', name: 'Robot Sprouty', category: 'skin', cost: 12, emoji: '🤖', description: 'Beep boop spell!' },
+  { id: 'skin-fire', name: 'Fire Sprouty', category: 'skin', cost: 12, emoji: '🔥', description: 'Blazing hot speller!' },
+  { id: 'skin-ice', name: 'Ice Sprouty', category: 'skin', cost: 12, emoji: '❄️', description: 'Cool as a cucumber!' },
+  { id: 'skin-galaxy', name: 'Galaxy Sprouty', category: 'skin', cost: 12, emoji: '🌌', description: 'Spell from the stars!' },
+  { id: 'skin-candy', name: 'Candy Sprouty', category: 'skin', cost: 12, emoji: '🍬', description: 'Sweet spelling!' },
 
   // Victory Dances (10 stars)
   { id: 'dance-break', name: 'Breakdance', category: 'dance', cost: 10, emoji: '🕺', description: 'Spin on your head!' },
   { id: 'dance-moon', name: 'Moonwalk', category: 'dance', cost: 10, emoji: '🌙', description: 'Smooth moves!' },
   { id: 'dance-wiggle', name: 'Wiggle', category: 'dance', cost: 10, emoji: '🪱', description: 'Wiggle wiggle!' },
   { id: 'dance-spin', name: 'Tornado Spin', category: 'dance', cost: 10, emoji: '🌪️', description: 'Wheeee!' },
+  { id: 'dance-robot', name: 'Robot Dance', category: 'dance', cost: 10, emoji: '🤖', description: 'Beep boop boogie!' },
+  { id: 'dance-floss', name: 'Floss Dance', category: 'dance', cost: 10, emoji: '🦷', description: 'Floss it out!' },
+  { id: 'dance-jump', name: 'Super Jump', category: 'dance', cost: 10, emoji: '⬆️', description: 'Bounce to the top!' },
 ];
 
 export function getItemsByCategory(category: ShopCategory): ShopItem[] {

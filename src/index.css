@@ -288,3 +288,30 @@ body {
 .animate-spark {
   animation: spark 0.5s ease-out forwards;
 }
+
+/* === New skin glow animations === */
+
+@keyframes fire-flicker {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.6)); }
+  50%       { filter: drop-shadow(0 0 18px rgba(255, 220, 0, 0.9)); }
+}
+
+@keyframes ice-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(160, 232, 240, 0.4)); }
+  50%       { filter: drop-shadow(0 0 14px rgba(160, 232, 240, 0.85)); }
+}
+
+@keyframes galaxy-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(90, 58, 170, 0.5)); }
+  50%       { filter: drop-shadow(0 0 20px rgba(120, 80, 220, 0.9)); }
+}
+
+@keyframes candy-sparkle {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 107, 157, 0.5)); }
+  50%       { filter: drop-shadow(0 0 16px rgba(255, 107, 157, 0.9)); }
+}
+
+.animate-fire-flicker  { animation: fire-flicker  1.2s ease-in-out infinite; }
+.animate-ice-shimmer   { animation: ice-shimmer   2s   ease-in-out infinite; }
+.animate-galaxy-pulse  { animation: galaxy-pulse  1.8s ease-in-out infinite; }
+.animate-candy-sparkle { animation: candy-sparkle 1.5s ease-in-out infinite; }

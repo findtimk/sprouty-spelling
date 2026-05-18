@@ -46,6 +46,29 @@ function getDanceAnimation(danceId: string): TargetAndTransition {
         scale: [1, 1.08, 1],
         transition: { repeat: Infinity, duration: 0.45, ease: 'linear' as const },
       };
+    case 'dance-robot':
+      // Robot Dance: stiff jerky mechanical steps
+      return {
+        x:      [0, 18, 18,  0,  0, -18, -18,  0],
+        y:      [0,  0, -8, -8,  0,   0,  -6,  0],
+        rotate: [0,  0,  8,  8,  0,   0,  -8,  0],
+        transition: { repeat: Infinity, duration: 1.2, ease: 'linear' as const },
+      };
+    case 'dance-floss':
+      // Floss Dance: rapid lateral hip swing
+      return {
+        x:      [0, 20, -20, 20, -20,  0],
+        rotate: [0, 15, -15, 15, -15,  0],
+        y:      [0, -4,  -4, -4,  -4,  0],
+        transition: { repeat: Infinity, duration: 0.6, ease: 'easeInOut' as const },
+      };
+    case 'dance-jump':
+      // Super Jump: big hops with squash-stretch
+      return {
+        y:     [0, -38, -38,  0,  4,  0],
+        scale: [1,  0.88, 1.1, 1.15, 0.95, 1],
+        transition: { repeat: Infinity, duration: 0.9, ease: 'easeInOut' as const },
+      };
     default:
       return {};
   }
@@ -83,6 +106,10 @@ function getSkinColors(skinId?: string | null) {
     case 'skin-rainbow': return { main: '#7B68EE', dark: '#5A4FCF', light: '#C5BEFF', floret: '#FF6B6B' };
     case 'skin-ninja':   return { main: '#1C2340', dark: '#0D1020', light: '#2E3A5A', floret: '#1A1F3A' };
     case 'skin-robot':   return { main: '#8EAABF', dark: '#5E7A8E', light: '#C8DDE8', floret: '#6E95AA' };
+    case 'skin-fire':    return { main: '#FF4500', dark: '#CC2200', light: '#FF8C00', floret: '#FF6600' };
+    case 'skin-ice':     return { main: '#A0E8F0', dark: '#48C8D8', light: '#E0F8FF', floret: '#70D8F0' };
+    case 'skin-galaxy':  return { main: '#2D1B69', dark: '#1A0E3D', light: '#6B4FA0', floret: '#4A2D8E' };
+    case 'skin-candy':   return { main: '#FF6B9D', dark: '#E91E8C', light: '#FFB3D0', floret: '#FF8FB8' };
     default:             return { main: '#4ade80', dark: '#22c55e', light: '#bbf7d0', floret: '#16a34a' };
   }
 }
@@ -103,6 +130,17 @@ export default function SproutyCharacter({
   const isRobot   = skinId === 'skin-robot';
   const isGold    = skinId === 'skin-gold';
   const isRainbow = skinId === 'skin-rainbow';
+  const isFire    = skinId === 'skin-fire';
+  const isIce     = skinId === 'skin-ice';
+  const isGalaxy  = skinId === 'skin-galaxy';
+  const isCandy   = skinId === 'skin-candy';
+  const hatEquipped = !!equipped?.hat;
+
+  const skinGlowClass =
+    isFire   ? 'animate-fire-flicker'  :
+    isIce    ? 'animate-ice-shimmer'   :
+    isGalaxy ? 'animate-galaxy-pulse'  :
+    isCandy  ? 'animate-candy-sparkle' : '';
 
   const animationVariant = {
     happy:       { y: [0, -4, 0],                                transition: { repeat: Infinity, duration: 2,   ease: 'easeInOut' as const } },
@@ -123,7 +161,7 @@ export default function SproutyCharacter({
 
   return (
     <motion.div
-      className={`inline-block ${className}`}
+      className={`inline-block ${className} ${skinGlowClass}`}
       animate={activeAnimation}
       style={{ width: size, height: size }}
     >
@@ -139,7 +177,7 @@ export default function SproutyCharacter({
             ══════════════════════════════════════════ */}
 
         {/* DEFAULT green florets */}
-        {!isNinja && !isRobot && !isGold && !isRainbow && (
+        {!hatEquipped && !isNinja && !isRobot && !isGold && !isRainbow && !isFire && !isIce && !isGalaxy && !isCandy && (
           <g>
             <circle cx="40" cy="18" r="10" fill={colors.floret} />
             <circle cx="55" cy="14" r="11" fill={colors.dark}   />
@@ -151,7 +189,7 @@ export default function SproutyCharacter({
         )}
 
         {/* GOLD sunburst crown */}
-        {isGold && (
+        {!hatEquipped && isGold && (
           <g>
             {/* Outer petals */}
             <circle cx="50" cy="16" r="12" fill="#FFD700" />
@@ -170,7 +208,7 @@ export default function SproutyCharacter({
         )}
 
         {/* RAINBOW per-color florets */}
-        {isRainbow && (
+        {!hatEquipped && isRainbow && (
           <g>
             <circle cx="40" cy="18" r="10" fill="#FF4444" />
             <circle cx="55" cy="14" r="11" fill="#FF8C00" />
@@ -182,7 +220,7 @@ export default function SproutyCharacter({
         )}
 
         {/* NINJA topknot */}
-        {isNinja && (
+        {!hatEquipped && isNinja && (
           <g>
             {/* Dark hair base connecting to head */}
             <ellipse cx="50" cy="28" rx="11" ry="6" fill="#0D1020" />
@@ -196,7 +234,7 @@ export default function SproutyCharacter({
         )}
 
         {/* ROBOT antenna + head bolts */}
-        {isRobot && (
+        {!hatEquipped && isRobot && (
           <g>
             {/* Antenna shaft */}
             <line x1="50" y1="8" x2="50" y2="30" stroke={colors.dark} strokeWidth="3" strokeLinecap="round" />
@@ -208,6 +246,83 @@ export default function SproutyCharacter({
             <circle cx="30" cy="36" r="2"   fill={colors.light} />
             <circle cx="70" cy="36" r="3.5" fill={colors.dark}  />
             <circle cx="70" cy="36" r="2"   fill={colors.light} />
+          </g>
+        )}
+
+        {/* FIRE florets */}
+        {!hatEquipped && isFire && (
+          <g>
+            <circle cx="40" cy="18" r="10" fill="#FF4500" />
+            <circle cx="55" cy="14" r="11" fill="#FF6600" />
+            <circle cx="50" cy="20" r="12" fill="#FF4500" />
+            <circle cx="60" cy="20" r="9"  fill="#CC2200" />
+            <circle cx="45" cy="12" r="8"  fill="#FF8C00" />
+            <circle cx="52" cy="8"  r="7"  fill="#FFAA00" />
+            <ellipse cx="46" cy="8"  rx="3" ry="6" fill="#FFD700" opacity="0.7" transform="rotate(-10 46 8)" />
+            <ellipse cx="54" cy="6"  rx="3" ry="7" fill="#FFD700" opacity="0.7" transform="rotate(10 54 6)" />
+            <ellipse cx="50" cy="4"  rx="2" ry="5" fill="white"   opacity="0.4" />
+          </g>
+        )}
+
+        {/* ICE crystal florets */}
+        {!hatEquipped && isIce && (
+          <g>
+            <polygon points="50,0 46,16 54,16"  fill="#A0E8F0" stroke="#70D0E8" strokeWidth="0.8" />
+            <polygon points="42,6 40,18 50,16"  fill="#C0F0F8" stroke="#70D0E8" strokeWidth="0.8" />
+            <polygon points="58,6 60,18 50,16"  fill="#C0F0F8" stroke="#70D0E8" strokeWidth="0.8" />
+            <circle cx="50" cy="16" r="5" fill="#E0F8FF" stroke="#70D0E8" strokeWidth="1" />
+            <line x1="50" y1="11" x2="50" y2="21" stroke="#70D0E8" strokeWidth="1" />
+            <line x1="45" y1="13.7" x2="55" y2="18.3" stroke="#70D0E8" strokeWidth="1" />
+            <line x1="55" y1="13.7" x2="45" y2="18.3" stroke="#70D0E8" strokeWidth="1" />
+            <circle cx="38" cy="14" r="2"   fill="white" opacity="0.9" />
+            <circle cx="62" cy="14" r="2"   fill="white" opacity="0.9" />
+            <circle cx="50" cy="5"  r="1.5" fill="white" opacity="0.8" />
+          </g>
+        )}
+
+        {/* GALAXY florets */}
+        {!hatEquipped && isGalaxy && (
+          <g>
+            <circle cx="40" cy="18" r="10" fill="#2D1B69" />
+            <circle cx="55" cy="14" r="11" fill="#1A0E3D" />
+            <circle cx="50" cy="20" r="12" fill="#2D1B69" />
+            <circle cx="60" cy="20" r="9"  fill="#4A2D8E" />
+            <circle cx="45" cy="12" r="8"  fill="#3D2080" />
+            <circle cx="52" cy="8"  r="7"  fill="#5A3AAA" />
+            <circle cx="38" cy="10" r="1.2" fill="white" opacity="0.7" />
+            <circle cx="44" cy="7"  r="1.2" fill="white" opacity="0.8" />
+            <circle cx="52" cy="5"  r="1.2" fill="white" opacity="0.9" />
+            <circle cx="58" cy="10" r="1.2" fill="white" opacity="0.7" />
+            <circle cx="48" cy="15" r="1"   fill="#F0ABFC" opacity="0.8" />
+            <circle cx="42" cy="20" r="1"   fill="white" opacity="0.6" />
+            <circle cx="60" cy="17" r="1"   fill="white" opacity="0.6" />
+            <circle cx="47" cy="12" r="6"   fill="#7B2FBE" opacity="0.3" />
+          </g>
+        )}
+
+        {/* CANDY florets */}
+        {!hatEquipped && isCandy && (
+          <g>
+            <circle cx="40" cy="18" r="10" fill="#FF6B9D" />
+            <circle cx="55" cy="14" r="11" fill="#FF8FB8" />
+            <circle cx="50" cy="20" r="12" fill="#FF6B9D" />
+            <circle cx="60" cy="20" r="9"  fill="#E91E8C" />
+            <circle cx="45" cy="12" r="8"  fill="#FF6B9D" />
+            <circle cx="52" cy="8"  r="7"  fill="#FFB3D0" />
+            <path d="M 44,10 Q 50,8 56,12"  stroke="white" strokeWidth="1.5" fill="none" opacity="0.55" />
+            <path d="M 42,16 Q 50,14 58,16" stroke="white" strokeWidth="1.5" fill="none" opacity="0.55" />
+            <circle cx="36" cy="18" r="2" fill="#FFD700" opacity="0.8" />
+            <circle cx="64" cy="18" r="2" fill="#FFD700" opacity="0.8" />
+            <circle cx="50" cy="5"  r="2" fill="white"   opacity="0.7" />
+          </g>
+        )}
+
+        {/* Broccoli tuft peeking under hat brim (keeps broccoli identity) */}
+        {hatEquipped && (
+          <g>
+            <circle cx="44" cy="29" r="5" fill={colors.floret} />
+            <circle cx="56" cy="29" r="5" fill={colors.dark}   />
+            <circle cx="50" cy="26" r="6" fill={colors.floret} />
           </g>
         )}
 
@@ -244,6 +359,50 @@ export default function SproutyCharacter({
             {/* Side seam lines */}
             <line x1="27" y1="42" x2="26" y2="82" stroke={colors.dark} strokeWidth="1" opacity="0.4" strokeLinecap="round" />
             <line x1="73" y1="42" x2="74" y2="82" stroke={colors.dark} strokeWidth="1" opacity="0.4" strokeLinecap="round" />
+          </g>
+        )}
+
+        {/* FIRE body effects */}
+        {isFire && (
+          <g>
+            <path d="M 26,75 Q 30,60 34,75" stroke="#FF8C00" strokeWidth="2" fill="none" opacity="0.5" />
+            <path d="M 70,70 Q 74,55 74,70" stroke="#FF8C00" strokeWidth="2" fill="none" opacity="0.5" />
+            <ellipse cx="50" cy="50" rx="8" ry="12" fill="#FF8C00" opacity="0.12" />
+          </g>
+        )}
+
+        {/* ICE body facets */}
+        {isIce && (
+          <g>
+            <line x1="35" y1="45" x2="38" y2="80" stroke="#A0E8F0" strokeWidth="0.8" opacity="0.4" />
+            <line x1="65" y1="45" x2="62" y2="80" stroke="#A0E8F0" strokeWidth="0.8" opacity="0.4" />
+            <circle cx="50" cy="60" r="10" fill="white" opacity="0.1" />
+          </g>
+        )}
+
+        {/* GALAXY body stars */}
+        {isGalaxy && (
+          <g>
+            <circle cx="36" cy="55" r="1"   fill="white" opacity="0.45" />
+            <circle cx="64" cy="55" r="1"   fill="white" opacity="0.45" />
+            <circle cx="40" cy="72" r="1"   fill="white" opacity="0.35" />
+            <circle cx="60" cy="70" r="1"   fill="white" opacity="0.35" />
+            <circle cx="50" cy="58" r="1"   fill="white" opacity="0.50" />
+            <circle cx="44" cy="65" r="0.8" fill="#F0ABFC" opacity="0.50" />
+            <circle cx="56" cy="62" r="0.8" fill="#F0ABFC" opacity="0.50" />
+            <ellipse cx="50" cy="62" rx="15" ry="20" fill="#7B2FBE" opacity="0.10" />
+          </g>
+        )}
+
+        {/* CANDY body swirls */}
+        {isCandy && (
+          <g>
+            <path d="M 27,55 Q 38,50 50,55 Q 62,60 73,55" stroke="white" strokeWidth="2" fill="none" opacity="0.25" />
+            <path d="M 27,65 Q 38,60 50,65 Q 62,70 73,65" stroke="white" strokeWidth="2" fill="none" opacity="0.25" />
+            <ellipse cx="41" cy="54" rx="3" ry="1.2" fill="#A855F7" opacity="0.6" transform="rotate(-30 41 54)" />
+            <ellipse cx="59" cy="52" rx="3" ry="1.2" fill="#22D3EE" opacity="0.6" transform="rotate(20 59 52)" />
+            <ellipse cx="44" cy="73" rx="3" ry="1.2" fill="#F87171" opacity="0.6" transform="rotate(-45 44 73)" />
+            <ellipse cx="60" cy="72" rx="3" ry="1.2" fill="#FBBF24" opacity="0.6" transform="rotate(30 60 72)" />
           </g>
         )}
 
@@ -489,30 +648,116 @@ export default function SproutyCharacter({
           </g>
         )}
 
-        {/* ── SPACE HELMET ── astronaut dome with golden visor */}
+        {/* ── SPACE HELMET ── astronaut dome with golden visor (enlarged to fully enclose head) */}
         {equipped?.hat === 'hat-space' && (
           <g>
-            {/* Outer dome — metallic silver */}
-            <ellipse cx="50" cy="11" rx="20" ry="18" fill="#B0BEC5" stroke="#78909C" strokeWidth="1.2" />
+            {/* Outer dome — metallic silver — larger rx/ry to fully cover florets */}
+            <ellipse cx="50" cy="11" rx="22" ry="20" fill="#B0BEC5" stroke="#78909C" strokeWidth="1.2" />
             {/* Inner dome shading for depth */}
-            <ellipse cx="50" cy="12" rx="17" ry="15" fill="#CFD8DC" opacity="0.5" />
+            <ellipse cx="50" cy="12" rx="19" ry="17" fill="#CFD8DC" opacity="0.5" />
             {/* Visor — warm golden amber (classic astronaut tint) */}
-            <ellipse cx="50" cy="12" rx="13" ry="11" fill="#FF8F00" opacity="0.35" />
-            <ellipse cx="50" cy="12" rx="13" ry="11" fill="#FFD54F" opacity="0.2" />
+            <ellipse cx="50" cy="12" rx="14" ry="12" fill="#FF8F00" opacity="0.35" />
+            <ellipse cx="50" cy="12" rx="14" ry="12" fill="#FFD54F" opacity="0.2" />
             {/* Visor frame ring */}
-            <ellipse cx="50" cy="12" rx="13" ry="11" fill="none" stroke="#546E7A" strokeWidth="1.4" />
-            {/* Side bolts */}
-            <circle cx="31" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
-            <circle cx="31" cy="12" r="1.2" fill="#B0BEC5" />
-            <circle cx="69" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
-            <circle cx="69" cy="12" r="1.2" fill="#B0BEC5" />
+            <ellipse cx="50" cy="12" rx="14" ry="12" fill="none" stroke="#546E7A" strokeWidth="1.4" />
+            {/* Side bolts — moved outward to match larger dome */}
+            <circle cx="29" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
+            <circle cx="29" cy="12" r="1.2" fill="#B0BEC5" />
+            <circle cx="71" cy="12" r="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.6" />
+            <circle cx="71" cy="12" r="1.2" fill="#B0BEC5" />
             {/* Dome highlight — crescent in upper-left for 3D sphere lighting */}
-            <ellipse cx="41" cy="4" rx="7" ry="5" fill="white" opacity="0.38" transform="rotate(-20, 41, 4)" />
+            <ellipse cx="40" cy="3" rx="8" ry="6" fill="white" opacity="0.38" transform="rotate(-20, 40, 3)" />
             {/* Small secondary highlight */}
-            <ellipse cx="37" cy="7" rx="3" ry="2" fill="white" opacity="0.25" />
-            {/* Bottom neck ring */}
-            <rect x="33" y="26" width="34" height="5" rx="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.8" />
-            <rect x="35" y="27" width="30" height="2" rx="1" fill="#90A4AE" opacity="0.6" />
+            <ellipse cx="36" cy="7" rx="3.5" ry="2.5" fill="white" opacity="0.25" />
+            {/* Bottom neck ring — lower to match larger dome */}
+            <rect x="31" y="28" width="38" height="5" rx="2.5" fill="#78909C" stroke="#546E7A" strokeWidth="0.8" />
+            <rect x="33" y="29" width="34" height="2" rx="1" fill="#90A4AE" opacity="0.6" />
+          </g>
+        )}
+
+        {/* ── COWBOY HAT ── wide-brim western with crown crease */}
+        {equipped?.hat === 'hat-cowboy' && (
+          <g>
+            {/* Wide brim */}
+            <ellipse cx="50" cy="22" rx="26" ry="5.5" fill="#8B6914" />
+            <ellipse cx="50" cy="21" rx="25"  ry="4"   fill="#A07920" />
+            {/* Crown with centre crease dent */}
+            <path d="M 35,21 Q 36,4 50,3 Q 64,4 65,21 Z" fill="#8B6914" />
+            <path d="M 50,3 L 50,21" stroke="#6B5210" strokeWidth="1.8" opacity="0.45" />
+            {/* Hat band */}
+            <rect x="35" y="17" width="30" height="4.5" rx="1" fill="#4A2800" />
+            <rect x="36" y="17.5" width="28" height="2" fill="#6B4010" opacity="0.5" />
+            {/* Buckle */}
+            <rect x="47" y="16.5" width="6" height="5" rx="0.8" fill="#FFD700" opacity="0.85" />
+            <rect x="48" y="17.5" width="4" height="3" rx="0.5" fill="#B8860B" opacity="0.6" />
+            {/* Brim highlight */}
+            <ellipse cx="50" cy="20" rx="24" ry="2" fill="#C49A30" opacity="0.28" />
+          </g>
+        )}
+
+        {/* ── WIZARD HAT ── tall pointed hat with stars */}
+        {equipped?.hat === 'hat-wizard' && (
+          <g>
+            {/* Cone body */}
+            <polygon points="50,-8 30,23 70,23" fill="#4A1A9E" />
+            {/* Cone shading */}
+            <polygon points="50,-8 50,23 70,23" fill="#3A1080" opacity="0.4" />
+            {/* Brim */}
+            <ellipse cx="50" cy="23" rx="22" ry="5" fill="#5B21B6" />
+            <ellipse cx="50" cy="22" rx="20" ry="3" fill="#7C3AED" opacity="0.5" />
+            {/* Brim highlight */}
+            <path d="M 31,22 Q 50,19 69,22" stroke="#A78BFA" strokeWidth="1" fill="none" opacity="0.6" />
+            {/* Star decorations */}
+            <text x="43" y="13" fontSize="7" fill="#FFD700">⭐</text>
+            <text x="51" y="6"  fontSize="5" fill="#FFD700">✨</text>
+            <text x="38" y="19" fontSize="5" fill="#FFF59D">★</text>
+            {/* Cone highlight */}
+            <path d="M 45,0 L 33,23" stroke="#7C3AED" strokeWidth="0.8" fill="none" opacity="0.35" />
+          </g>
+        )}
+
+        {/* ── PARTY HAT ── striped cone with pom-pom */}
+        {equipped?.hat === 'hat-party' && (
+          <g>
+            {/* Cone body */}
+            <polygon points="50,0 32,24 68,24" fill="#FF69B4" />
+            {/* Stripes */}
+            <line x1="41" y1="24" x2="50" y2="0"  stroke="white"   strokeWidth="1.5" opacity="0.5" />
+            <line x1="50" y1="24" x2="50" y2="0"  stroke="#FFD700" strokeWidth="1.5" opacity="0.6" />
+            <line x1="59" y1="24" x2="50" y2="0"  stroke="white"   strokeWidth="1.5" opacity="0.5" />
+            {/* Hat band */}
+            <rect x="32" y="21" width="36" height="4" rx="1" fill="#FF1493" opacity="0.7" />
+            {/* Chin elastic */}
+            <path d="M 32,24 Q 25,31 28,38" stroke="#FF69B4" strokeWidth="0.8" fill="none" opacity="0.55" />
+            {/* Pom-pom */}
+            <circle cx="50" cy="0"   r="5"   fill="#FFD700" />
+            <circle cx="47" cy="-2" r="3"   fill="#FFA0CB" />
+            <circle cx="53" cy="-1" r="3"   fill="#A0F0C0" />
+            <circle cx="50" cy="-4" r="2.5" fill="#FFD700" opacity="0.8" />
+            {/* Polka dots */}
+            <circle cx="42" cy="14" r="1.5" fill="#FFD700" opacity="0.85" />
+            <circle cx="57" cy="11" r="1.5" fill="white"   opacity="0.85" />
+            <circle cx="50" cy="17" r="1.5" fill="#00CCFF"  opacity="0.85" />
+          </g>
+        )}
+
+        {/* ── TOP HAT ── classic stovepipe with band */}
+        {equipped?.hat === 'hat-tophat' && (
+          <g>
+            {/* Brim */}
+            <ellipse cx="50" cy="23" rx="23" ry="4.5" fill="#111111" />
+            <ellipse cx="50" cy="22" rx="21" ry="3"   fill="#1E1E1E" />
+            {/* Crown cylinder */}
+            <rect x="33" y="2" width="34" height="21" rx="2" fill="#111111" />
+            <rect x="34" y="3" width="32" height="19" rx="1" fill="#1A1A1A" />
+            {/* Hat band — silk ribbon */}
+            <rect x="33" y="18" width="34" height="4.5" rx="1" fill="#CC0044" />
+            <rect x="34" y="18.5" width="32" height="2" fill="#FF0055" opacity="0.35" />
+            {/* Crown sheen */}
+            <path d="M 36,4 L 36,18" stroke="#2A2A2A" strokeWidth="1.5" opacity="0.5" />
+            <ellipse cx="42" cy="9" rx="5" ry="8" fill="white" opacity="0.05" />
+            {/* Brim shine */}
+            <ellipse cx="42" cy="22" rx="8" ry="1.5" fill="white" opacity="0.07" />
           </g>
         )}
 
@@ -540,6 +785,73 @@ export default function SproutyCharacter({
           <g>
             <line x1="82" y1="47" x2="92" y2="27" stroke="#8B4513" strokeWidth="2" />
             <text x="88" y="26" fontSize="10">⭐</text>
+          </g>
+        )}
+        {equipped?.accessory === 'acc-headphones' && (
+          <g>
+            {/* Headband arc over head */}
+            <path d="M 28,38 Q 50,18 72,38" stroke="#1A1A1A" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            <path d="M 28,38 Q 50,19 72,38" stroke="#444444" strokeWidth="1.2" fill="none" opacity="0.4" />
+            {/* Left ear cup */}
+            <rect x="22" y="35" width="10" height="13" rx="4.5" fill="#222222" />
+            <rect x="24" y="37" width="6"  height="9"  rx="2.5" fill="#444444" />
+            <circle cx="27" cy="41" r="1.5" fill="#00FF88" opacity="0.9" />
+            {/* Right ear cup */}
+            <rect x="68" y="35" width="10" height="13" rx="4.5" fill="#222222" />
+            <rect x="70" y="37" width="6"  height="9"  rx="2.5" fill="#444444" />
+            <circle cx="73" cy="41" r="1.5" fill="#00FF88" opacity="0.9" />
+          </g>
+        )}
+        {equipped?.accessory === 'acc-flowers' && (
+          <g>
+            {/* Green vine */}
+            <path d="M 27,33 Q 50,26 73,33" stroke="#22C55E" strokeWidth="2" fill="none" />
+            {/* Pink flower */}
+            <circle cx="33" cy="30" r="3.5" fill="#F9A8D4" />
+            <circle cx="33" cy="30" r="2"   fill="#F472B6" />
+            {/* Orange flower */}
+            <circle cx="44" cy="27" r="3.5" fill="#FED7AA" />
+            <circle cx="44" cy="27" r="2"   fill="#FB923C" />
+            {/* Red center flower */}
+            <circle cx="50" cy="26" r="4.5" fill="#FECACA" />
+            <circle cx="50" cy="26" r="2.5" fill="#EF4444" />
+            {/* Purple flower */}
+            <circle cx="56" cy="27" r="3.5" fill="#DDD6FE" />
+            <circle cx="56" cy="27" r="2"   fill="#8B5CF6" />
+            {/* Blue flower */}
+            <circle cx="67" cy="30" r="3.5" fill="#BAE6FD" />
+            <circle cx="67" cy="30" r="2"   fill="#3B82F6" />
+            {/* Leaves */}
+            <ellipse cx="39" cy="28" rx="3" ry="1.5" fill="#16A34A" transform="rotate(-20 39 28)" />
+            <ellipse cx="61" cy="28" rx="3" ry="1.5" fill="#16A34A" transform="rotate(20 61 28)" />
+            {/* Yellow centers */}
+            <circle cx="33" cy="30" r="1"   fill="#FDE68A" />
+            <circle cx="44" cy="27" r="1"   fill="#FDE68A" />
+            <circle cx="56" cy="27" r="1"   fill="#FDE68A" />
+            <circle cx="67" cy="30" r="1"   fill="#FDE68A" />
+          </g>
+        )}
+        {equipped?.accessory === 'acc-lightning' && (
+          <g>
+            {/* Lightning bolt beside head */}
+            <polygon points="79,30 74,44 78,44 73,62 83,43 79,43 84,30" fill="#FACC15" stroke="#B45309" strokeWidth="0.8" />
+            <polygon points="79,30 74,44 78,44 73,62 83,43 79,43 84,30" fill="white" opacity="0.25" />
+          </g>
+        )}
+        {equipped?.accessory === 'acc-trophy' && (
+          <g>
+            {/* Trophy base */}
+            <rect x="82" y="57" width="9" height="2.5" rx="1" fill="#FFD700" stroke="#B8860B" strokeWidth="0.5" />
+            <rect x="84" y="52" width="3" height="5"   rx="0.5" fill="#B8860B" />
+            {/* Cup body */}
+            <path d="M 79,37 Q 76,44 78,52 L 87,52 Q 89,44 86,37 Z" fill="#FFD700" stroke="#B8860B" strokeWidth="0.8" />
+            {/* Handles */}
+            <path d="M 79,40 Q 75,44 79,48" stroke="#B8860B" strokeWidth="1.5" fill="none" />
+            <path d="M 86,40 Q 90,44 86,48" stroke="#B8860B" strokeWidth="1.5" fill="none" />
+            {/* Shine */}
+            <path d="M 81,39 L 81,51" stroke="white" strokeWidth="1.2" opacity="0.3" />
+            {/* Star */}
+            <text x="80" y="49" fontSize="5">⭐</text>
           </g>
         )}
       </svg>
