@@ -588,6 +588,23 @@ export default function GamePlay({
         Word {state.currentWordIndex + 1} of {state.words.length}
       </div>
 
+      {/* Word clue — always visible */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={state.currentWordIndex}
+          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          className="relative bg-white rounded-2xl px-4 py-2.5 mx-4 mb-2 shadow-sm border border-emerald-100"
+        >
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-l border-t border-emerald-100 transform rotate-45" />
+          <p className="text-sm sm:text-base text-gray-600 font-display font-semibold text-center leading-snug relative z-10">
+            {currentWord.hint}
+          </p>
+        </motion.div>
+      </AnimatePresence>
+
       {/* Mode-specific status text */}
       <AnimatePresence>
         {modeStatusText && state.phase === 'playing' && (
