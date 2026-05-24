@@ -510,26 +510,26 @@ export default function GamePlay({
       setWhompText(WHOMP_HITS[whompIndex.current % WHOMP_HITS.length]);
       whompIndex.current++;
       setShowWhomp(true);
-      setTimeout(() => setShowWhomp(false), 800);
+      setTimeout(() => setShowWhomp(false), 1400);
     }
   }, [state.phase]);
 
   // Auto-advance after animations
   useEffect(() => {
     if (state.phase === 'correct') {
-      const timer = setTimeout(onAdvanceToNextWord, 1200);
+      const timer = setTimeout(onAdvanceToNextWord, 2200);
       return () => clearTimeout(timer);
     }
     if (state.phase === 'wrong') {
-      const timer = setTimeout(onResetAfterWrong, 1200);
+      const timer = setTimeout(onResetAfterWrong, 2000);
       return () => clearTimeout(timer);
     }
     if (state.phase === 'battle-attack') {
-      const timer = setTimeout(onAdvanceToNextWord, 1200);
+      const timer = setTimeout(onAdvanceToNextWord, 2200);
       return () => clearTimeout(timer);
     }
     if (state.phase === 'battle-villain-attack') {
-      const timer = setTimeout(onResetAfterWrong, 1200);
+      const timer = setTimeout(onResetAfterWrong, 2000);
       return () => clearTimeout(timer);
     }
   }, [state.phase, state.villainHealth, onAdvanceToNextWord, onResetAfterWrong]);
