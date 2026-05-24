@@ -8,9 +8,10 @@ interface LetterTileProps {
   variant?: 'available' | 'slot' | 'slot-empty';
   shaking?: boolean;
   highlighted?: boolean;
+  wrongFlash?: boolean;
 }
 
-export default function LetterTile({ letter, onTap, disabled, placed, variant = 'available', shaking, highlighted }: LetterTileProps) {
+export default function LetterTile({ letter, onTap, disabled, placed, variant = 'available', shaking, highlighted, wrongFlash }: LetterTileProps) {
   if (variant === 'slot-empty') {
     if (highlighted) {
       return (
@@ -29,6 +30,21 @@ export default function LetterTile({ letter, onTap, disabled, placed, variant = 
   }
 
   if (variant === 'slot') {
+    if (wrongFlash) {
+      return (
+        <motion.button
+          onPointerDown={(e) => { e.preventDefault(); if (!disabled) onTap(); }}
+          disabled={disabled}
+          animate={{ x: [-4, 4, -3, 3, 0] }}
+          transition={{ duration: 0.5 }}
+          className={`w-11 h-12 sm:w-12 sm:h-14 rounded-xl font-display font-bold text-xl sm:text-2xl flex items-center justify-center
+            bg-red-100 text-red-600 border-2 border-red-400 shadow-md
+            ${disabled ? 'opacity-70' : 'cursor-pointer'}`}
+        >
+          {letter.toUpperCase()}
+        </motion.button>
+      );
+    }
     return (
       <motion.button
         initial={{ scale: 0 }}

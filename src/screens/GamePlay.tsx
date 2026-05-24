@@ -401,7 +401,8 @@ export default function GamePlay({
   const [showWhomp, setShowWhomp] = useState(false);
   const [whompText, setWhompText] = useState('WHOMP!');
   const [wrongPhrase, setWrongPhrase] = useState('Whoopsie!');
-  const [hintActive, setHintActive] = useState(false);
+  const [hintSlot, setHintSlot] = useState<number | null>(null);
+  const [wrongFlashSlots, setWrongFlashSlots] = useState<Set<number>>(new Set());
   const phraseIndex = useRef(0);
   const wrongPhraseIndex = useRef(0);
   const whompIndex = useRef(0);
@@ -410,15 +411,38 @@ export default function GamePlay({
 
   // Reset hint on word change
   useEffect(() => {
-    setHintActive(false);
+    setHintSlot(null);
+    setWrongFlashSlots(new Set());
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
   }, [state.currentWordIndex]);
 
   const handleHint = useCallback(() => {
-    if (state.phase !== 'playing' || hintActive) return;
-    setHintActive(true);
-    hintTimerRef.current = setTimeout(() => setHintActive(false), 2000);
-  }, [state.phase, hintActive]);
+    if (state.phase !== 'playing') return;
+    if (hintSlot !== null) return;
+
+    const word = currentWord!.word.toUpperCase();
+
+    // Find any placed letters that are in the wrong position
+    const wrongIndices: number[] = [];
+    state.placedLetters.forEach((tile, i) => {
+      if (tile && tile.letter.toUpperCase() !== word[i]) {
+        wrongIndices.push(i);
+      }
+    });
+
+    if (wrongIndices.length > 0) {
+      setWrongFlashSlots(new Set(wrongIndices));
+      setTimeout(() => setWrongFlashSlots(new Set()), 600);
+      return;
+    }
+
+    // All placed letters correct — reveal next empty slot
+    const nextEmpty = state.placedLetters.findIndex(s => s === null);
+    if (nextEmpty === -1) return;
+
+    setHintSlot(nextEmpty);
+    hintTimerRef.current = setTimeout(() => setHintSlot(null), 2000);
+  }, [state.phase, state.placedLetters, currentWord, hintSlot]);
 
   // Auto-check when all slots filled
   useEffect(() => {
@@ -516,7 +540,6 @@ export default function GamePlay({
 
   const modeStatusText = getModeStatusText(state);
   const sproutyExpression = getSproutyExpression(state.phase, state);
-  const firstHintLetter = currentWord.word[0]?.toUpperCase() ?? '';
 
   return (
     <div className="flex-1 flex flex-col pt-3 pb-4 px-4 relative">
@@ -627,8 +650,10 @@ export default function GamePlay({
             <motion.button
               onPointerDown={(e) => { e.preventDefault(); handleHint(); }}
               whileTap={{ scale: 0.85 }}
-              animate={hintActive
+              animate={hintSlot !== null
                 ? { backgroundColor: '#fef3c7', borderColor: '#fbbf24', color: '#d97706' }
+                : wrongFlashSlots.size > 0
+                ? { backgroundColor: '#fee2e2', borderColor: '#f87171', color: '#dc2626' }
                 : { backgroundColor: '#d1fae5', borderColor: '#6ee7b7', color: '#059669' }
               }
               className="absolute top-1 right-1 w-7 h-7 rounded-full border-2 font-display font-extrabold text-sm flex items-center justify-center cursor-pointer z-20"
@@ -685,13 +710,14 @@ export default function GamePlay({
                     variant="slot"
                     disabled={isInputDisabled}
                     shaking={state.phase === 'wrong'}
+                    wrongFlash={wrongFlashSlots.has(i)}
                   />
                 ) : (
                   <LetterTile
-                    letter={hintActive && i === 0 ? firstHintLetter : ''}
+                    letter={hintSlot === i ? currentWord.word[i].toUpperCase() : ''}
                     onTap={() => {}}
                     variant="slot-empty"
-                    highlighted={hintActive && i === 0}
+                    highlighted={hintSlot === i}
                   />
                 )}
               </div>
