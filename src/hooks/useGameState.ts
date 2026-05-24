@@ -156,10 +156,8 @@ export function useGameState() {
   }, []);
 
   const removeLetter = useCallback((slotIndex: number) => {
-    if (inputDisabled.current) return;
-
     setState(prev => {
-      if (!prev || prev.phase !== 'playing') return prev;
+      if (!prev || (prev.phase !== 'playing' && prev.phase !== 'wrong' && prev.phase !== 'battle-villain-attack')) return prev;
 
       const tile = prev.placedLetters[slotIndex];
       if (!tile) return prev;

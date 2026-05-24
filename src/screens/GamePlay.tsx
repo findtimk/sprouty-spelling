@@ -167,7 +167,8 @@ function ProgressIndicator({ mode, value, total }: { mode: string; value: number
 }
 
 function GrowthModeVisual({ state, equipped }: { state: GameState; equipped: GamePlayProps['equipped'] }) {
-  const scale = 1 + (state.growthPercent / 100) * 1.8;
+  const baseSize = 72;
+  const size = Math.round(baseSize * (1 + (state.growthPercent / 100) * 1.8));
   const vibrateClass = state.growthPercent >= 90 ? 'animate-vibrate-intense' :
                        state.growthPercent >= 75 ? 'animate-vibrate' : '';
   const glowClass = state.growthPercent >= 75 ? 'animate-glow-red' :
@@ -179,7 +180,7 @@ function GrowthModeVisual({ state, equipped }: { state: GameState; equipped: Gam
     state.growthPercent >= 30 ? 'excited' : 'happy';
 
   return (
-    <div className={`flex items-center justify-center h-20 relative ${glowClass}`}>
+    <div className={`flex items-end justify-center relative ${glowClass}`} style={{ minHeight: size + 16 }}>
       {/* Steam puffs at high pressure */}
       {state.growthPercent >= 70 && (
         <div className="absolute inset-0 pointer-events-none flex items-start justify-center" style={{ paddingTop: 2 }}>
@@ -199,24 +200,20 @@ function GrowthModeVisual({ state, equipped }: { state: GameState; equipped: Gam
       {state.growthPercent >= 90 && (
         <motion.div
           className="absolute rounded-full border-4 pointer-events-none"
-          style={{ width: 100, height: 100 }}
+          style={{ width: size, height: size }}
           animate={{ borderColor: ['#ef4444', '#fbbf24', '#ef4444'], scale: [1, 1.04, 1] }}
           transition={{ repeat: Infinity, duration: 0.3 }}
         />
       )}
 
-      <motion.div
-        className={vibrateClass}
-        animate={{ scale }}
-        transition={{ type: 'spring', stiffness: 200 }}
-      >
+      <div className={vibrateClass}>
         <SproutyCharacter
           expression={growthExpression}
-          size={72}
+          size={size}
           equipped={equipped}
           inflated={state.growthPercent}
         />
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -392,7 +389,7 @@ export default function GamePlay({
   onRetryLevel,
   onQuit,
 }: GamePlayProps) {
-  const isInputDisabled = state.phase !== 'playing';
+  const isInputDisabled = state.phase === 'correct' || state.phase === 'level-complete' || state.phase === 'battle-attack' || state.phase === 'battle-defeat';
   const [showFloatingStar, setShowFloatingStar] = useState(false);
   const [confettiCount, setConfettiCount] = useState(5);
   const [showMiniConfetti, setShowMiniConfetti] = useState(false);
@@ -588,7 +585,29 @@ export default function GamePlay({
         Word {state.currentWordIndex + 1} of {state.words.length}
       </div>
 
-      {/* Word clue — always visible */}
+      {/* Mode visual */}
+      <ModeVisual state={state} equipped={equipped} />
+
+      {/* Sprouty character — non-growth modes only (growth uses ModeVisual) */}
+      {state.mode !== 'growth' && (
+        <div className="flex justify-center my-2 relative">
+          <SproutyCharacter
+            expression={sproutyExpression}
+            size={80}
+            equipped={equipped}
+          />
+          <WrongAnswerStars show={state.phase === 'wrong' || state.phase === 'battle-villain-attack'} />
+        </div>
+      )}
+
+      {/* Wrong answer orbiting stars for growth mode */}
+      {state.mode === 'growth' && state.phase === 'wrong' && (
+        <div className="flex justify-center relative h-0">
+          <WrongAnswerStars show={true} />
+        </div>
+      )}
+
+      {/* Word clue — below Sprouty, tail points up toward him */}
       <AnimatePresence mode="wait">
         <motion.div
           key={state.currentWordIndex}
@@ -598,10 +617,26 @@ export default function GamePlay({
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           className="relative bg-white rounded-2xl px-4 py-2.5 mx-4 mb-2 shadow-sm border border-emerald-100"
         >
+          {/* Tail pointing up toward Sprouty */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-l border-t border-emerald-100 transform rotate-45" />
-          <p className="text-sm sm:text-base text-gray-600 font-display font-semibold text-center leading-snug relative z-10">
+          <p className="text-sm sm:text-base text-gray-600 font-display font-semibold text-center leading-snug relative z-10 pr-8">
             {currentWord.hint}
           </p>
+          {/* Hint badge — inside bubble, top-right corner */}
+          {state.phase === 'playing' && (
+            <motion.button
+              onPointerDown={(e) => { e.preventDefault(); handleHint(); }}
+              whileTap={{ scale: 0.85 }}
+              animate={hintActive
+                ? { backgroundColor: '#fef3c7', borderColor: '#fbbf24', color: '#d97706' }
+                : { backgroundColor: '#d1fae5', borderColor: '#6ee7b7', color: '#059669' }
+              }
+              className="absolute top-1 right-1 w-7 h-7 rounded-full border-2 font-display font-extrabold text-sm flex items-center justify-center cursor-pointer z-20"
+              style={{ minWidth: 44, minHeight: 44, margin: -6 }}
+            >
+              ?
+            </motion.button>
+          )}
         </motion.div>
       </AnimatePresence>
 
@@ -620,29 +655,6 @@ export default function GamePlay({
         )}
       </AnimatePresence>
 
-      {/* Mode visual */}
-      <ModeVisual state={state} equipped={equipped} />
-
-      {/* Sprouty character — non-growth modes only (growth uses ModeVisual) */}
-      {state.mode !== 'growth' && (
-        <div className="flex justify-center my-2 relative">
-          <SproutyCharacter
-            expression={sproutyExpression}
-            size={80}
-            equipped={equipped}
-          />
-          {/* Wrong answer orbiting stars */}
-          <WrongAnswerStars show={state.phase === 'wrong' || state.phase === 'battle-villain-attack'} />
-        </div>
-      )}
-
-      {/* Wrong answer orbiting stars for growth mode (around mode visual area) */}
-      {state.mode === 'growth' && (state.phase === 'wrong') && (
-        <div className="flex justify-center relative h-0">
-          <WrongAnswerStars show={true} />
-        </div>
-      )}
-
       {/* SPROING text for growth mode correct answer */}
       <AnimatePresence>
         {showSproing && state.mode === 'growth' && (
@@ -659,20 +671,8 @@ export default function GamePlay({
         )}
       </AnimatePresence>
 
-      {/* Hint button + answer slots row */}
-      <div className="flex items-center justify-center gap-3 mb-4">
-        {/* Hint button */}
-        {state.phase === 'playing' && (
-          <motion.button
-            onPointerDown={(e) => { e.preventDefault(); handleHint(); }}
-            whileTap={{ scale: 0.85 }}
-            className="w-11 h-11 rounded-full bg-emerald-100 border-2 border-emerald-200 text-emerald-600 font-display font-extrabold text-lg cursor-pointer flex-shrink-0 flex items-center justify-center"
-            animate={hintActive ? { backgroundColor: '#d1fae5', borderColor: '#6ee7b7' } : {}}
-          >
-            ?
-          </motion.button>
-        )}
-
+      {/* Interactive zone — fills remaining space and centers content vertically */}
+      <div className="flex-1 flex flex-col justify-center gap-4">
         {/* Answer slots */}
         <div className="flex justify-center gap-1.5 flex-wrap">
           <AnimatePresence mode="popLayout">
@@ -698,76 +698,78 @@ export default function GamePlay({
             ))}
           </AnimatePresence>
         </div>
-      </div>
 
-      {/* Feedback messages */}
-      <AnimatePresence>
-        {(state.phase === 'correct' || state.phase === 'battle-attack') && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center mb-2"
-          >
-            <span className={`font-display font-extrabold ${getCelebrationTier(state.currentWordIndex) === 'big' ? 'text-3xl' : 'text-xl'} text-emerald-500`}>
-              ⭐ {funPhrase}
-            </span>
-            {state.wordStreak >= 3 && (
+        {/* Feedback messages */}
+        <div className="min-h-[2rem]">
+          <AnimatePresence>
+            {(state.phase === 'correct' || state.phase === 'battle-attack') && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-sm font-display font-bold text-orange-500 mt-1"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center"
               >
-                🔥 {state.wordStreak} in a row!
+                <span className={`font-display font-extrabold ${getCelebrationTier(state.currentWordIndex) === 'big' ? 'text-3xl' : 'text-xl'} text-emerald-500`}>
+                  ⭐ {funPhrase}
+                </span>
+                {state.wordStreak >= 3 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-sm font-display font-bold text-orange-500 mt-1"
+                  >
+                    🔥 {state.wordStreak} in a row!
+                  </motion.div>
+                )}
+                {state.phase === 'battle-attack' && villainReaction && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-sm text-gray-400 font-display italic mt-1"
+                  >
+                    {state.villain?.name}: "{villainReaction}"
+                  </motion.div>
+                )}
               </motion.div>
             )}
-            {state.phase === 'battle-attack' && villainReaction && (
+            {state.phase === 'wrong' && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-sm text-gray-400 font-display italic mt-1"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: [10, -8, 0] }}
+                exit={{ opacity: 0 }}
+                className="text-center font-display font-extrabold text-3xl text-orange-500"
               >
-                {state.villain?.name}: "{villainReaction}"
+                {wrongPhrase}
               </motion.div>
             )}
-          </motion.div>
-        )}
-        {state.phase === 'wrong' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: [10, -8, 0] }}
-            exit={{ opacity: 0 }}
-            className="text-center mb-2 font-display font-extrabold text-3xl text-orange-500"
-          >
-            {wrongPhrase}
-          </motion.div>
-        )}
-        {state.phase === 'battle-villain-attack' && state.villain && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center mb-2 font-display font-bold text-rose-400 text-lg"
-          >
-            {state.villain.name} {state.villain.attackMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {state.phase === 'battle-villain-attack' && state.villain && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center font-display font-bold text-rose-400 text-lg"
+              >
+                {state.villain.name} {state.villain.attackMessage}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-      {/* Available letters */}
-      <div className="flex justify-center gap-2 flex-wrap mt-auto">
-        {state.availableLetters.map(tile => (
-          <LetterTile
-            key={tile.id}
-            letter={tile.letter}
-            onTap={() => onPlaceLetter(tile.id)}
-            placed={tile.placed}
-            variant="available"
-            disabled={isInputDisabled}
-          />
-        ))}
+        {/* Available letters */}
+        <div className="flex justify-center gap-2 flex-wrap">
+          {state.availableLetters.map(tile => (
+            <LetterTile
+              key={tile.id}
+              letter={tile.letter}
+              onTap={() => onPlaceLetter(tile.id)}
+              placed={tile.placed}
+              variant="available"
+              disabled={isInputDisabled}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Battle defeat overlay */}
