@@ -7,6 +7,12 @@ import { shuffle } from '../utils/shuffle';
 const WORDS_PER_LEVEL = 10;
 const SEEN_WORDS_KEY = 'sprouty_seen_words';
 
+const STARS_PER_WORD: Record<Difficulty, number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
+};
+
 /** Pick words prioritizing ones the user hasn't seen recently */
 function pickFreshWords(allWords: WordEntry[], difficulty: Difficulty, count: number): WordEntry[] {
   // Load seen words from localStorage
@@ -193,7 +199,7 @@ export function useGameState() {
     if (isCorrect) {
       setState(prev => {
         if (!prev) return prev;
-        const newStars = prev.starsEarnedThisLevel + 1;
+        const newStars = prev.starsEarnedThisLevel + STARS_PER_WORD[prev.difficulty];
         const newStreak = prev.wordStreak + 1;
         const isLastWord = prev.currentWordIndex >= prev.words.length - 1;
 

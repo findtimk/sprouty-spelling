@@ -7,10 +7,10 @@ interface LevelSelectProps {
   onBack: () => void;
 }
 
-const levels: { difficulty: Difficulty; label: string; icon: string; color: string; bgColor: string; borderColor: string; ages: string }[] = [
-  { difficulty: 'easy', label: 'Easy', icon: '🌱', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', ages: 'Ages 7-8' },
-  { difficulty: 'medium', label: 'Medium', icon: '🌿', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', ages: 'Ages 8-9' },
-  { difficulty: 'hard', label: 'Hard', icon: '🌳', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', ages: 'Ages 9-10' },
+const levels: { difficulty: Difficulty; label: string; icon: string; color: string; bgColor: string; borderColor: string; ages: string; stars: string; starsLabel: string }[] = [
+  { difficulty: 'easy', label: 'Easy', icon: '🌱', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', ages: 'Ages 7-8', stars: '⭐', starsLabel: '1 star per word' },
+  { difficulty: 'medium', label: 'Medium', icon: '🌿', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', ages: 'Ages 8-9', stars: '⭐⭐', starsLabel: '2 stars per word' },
+  { difficulty: 'hard', label: 'Hard', icon: '🌳', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', ages: 'Ages 9-10', stars: '⭐⭐⭐', starsLabel: '3 stars per word' },
 ];
 
 export default function LevelSelect({ onSelectLevel, progress, onBack }: LevelSelectProps) {
@@ -53,7 +53,10 @@ export default function LevelSelect({ onSelectLevel, progress, onBack }: LevelSe
                 <div className={`font-display font-bold text-xl ${level.color}`}>
                   {level.label}
                 </div>
-                <div className="text-sm text-gray-500">{level.ages} · 12 words</div>
+                <div className="text-sm text-gray-500">{level.ages} · 10 words</div>
+                <div className="text-sm font-display font-semibold text-amber-500 mt-0.5">
+                  {level.stars} {level.starsLabel}
+                </div>
                 {completed > 0 && (
                   <div className="text-xs text-gray-400 mt-1">
                     Level {completed} completed ✓

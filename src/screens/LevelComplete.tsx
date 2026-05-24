@@ -4,10 +4,18 @@ import SproutyCharacter from '../components/SproutyCharacter';
 import BrainCharacter from '../components/BrainCharacter';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
+import type { Difficulty } from '../game/words';
+
+const STARS_PER_WORD: Record<Difficulty, number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
+};
 
 interface LevelCompleteProps {
   starsEarned: number;
   wordsTotal: number;
+  difficulty: Difficulty;
   mode: GameMode;
   villainName?: string;
   equipped: { hat?: string | null; accessory?: string | null; skin?: string | null; dance?: string | null };
@@ -147,6 +155,7 @@ function GrowthExplosion({ equipped, onDone }: { equipped: LevelCompleteProps['e
 export default function LevelComplete({
   starsEarned,
   wordsTotal,
+  difficulty,
   mode,
   villainName,
   equipped,
@@ -158,9 +167,10 @@ export default function LevelComplete({
   const [explosionDone, setExplosionDone] = useState(false);
   const message = getModeMessage(mode, villainName);
 
+  const maxStars = wordsTotal * STARS_PER_WORD[difficulty];
   const performanceLevel: 'perfect' | 'good' | 'partial' =
-    starsEarned >= wordsTotal ? 'perfect' :
-    starsEarned >= Math.ceil(wordsTotal * 0.7) ? 'good' : 'partial';
+    starsEarned >= maxStars ? 'perfect' :
+    starsEarned >= Math.ceil(maxStars * 0.7) ? 'good' : 'partial';
 
   const confettiCount = mode === 'growth' ? 100 : performanceLevel === 'perfect' ? 120 : performanceLevel === 'good' ? 60 : 20;
   const contentDelay = mode === 'growth' ? 1800 : 800;
@@ -238,23 +248,22 @@ export default function LevelComplete({
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: 'spring' }}
-            className="bg-amber-50 rounded-2xl px-6 py-4 mb-8 inline-block"
+            className="bg-amber-50 rounded-2xl px-8 py-4 mb-8 inline-block"
           >
             <div className="text-amber-500 font-display font-bold text-lg mb-1">
               Stars Earned
             </div>
-            <div className="flex justify-center gap-1">
-              {Array.from({ length: starsEarned }, (_, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.5 + i * 0.08, type: 'spring' }}
-                  className="text-2xl"
-                >
-                  ⭐
-                </motion.span>
-              ))}
+            <motion.div
+              className="flex items-center justify-center gap-2"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 18 }}
+            >
+              <span className="text-4xl">⭐</span>
+              <span className="font-display font-extrabold text-4xl text-amber-500">+{starsEarned}</span>
+            </motion.div>
+            <div className="text-amber-400 font-display text-sm mt-2">
+              {'⭐'.repeat(STARS_PER_WORD[difficulty])} {STARS_PER_WORD[difficulty]} star{STARS_PER_WORD[difficulty] > 1 ? 's' : ''} per word on {difficulty} mode
             </div>
           </motion.div>
 

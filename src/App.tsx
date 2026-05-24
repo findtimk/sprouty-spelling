@@ -181,6 +181,7 @@ export default function App() {
             <LevelComplete
               starsEarned={game.state.starsEarnedThisLevel}
               wordsTotal={game.state.words.length}
+              difficulty={game.state.difficulty}
               mode={game.state.mode}
               villainName={game.state.villain?.name}
               equipped={equipped}

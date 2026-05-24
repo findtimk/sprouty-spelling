@@ -255,7 +255,13 @@ function ModeVisual({ state, equipped }: { state: GameState; equipped: GamePlayP
 }
 
 /** Floating "+1 ⭐" that rises and fades */
-function FloatingStarPopup({ show }: { show: boolean }) {
+const STARS_PER_WORD: Record<string, number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
+};
+
+function FloatingStarPopup({ show, count }: { show: boolean; count: number }) {
   if (!show) return null;
   return (
     <motion.div
@@ -264,7 +270,7 @@ function FloatingStarPopup({ show }: { show: boolean }) {
       animate={{ opacity: 0, y: -60, scale: 1.3 }}
       transition={{ duration: 1, ease: 'easeOut' }}
     >
-      +1 ⭐
+      +{count} ⭐
     </motion.div>
   );
 }
@@ -545,7 +551,7 @@ export default function GamePlay({
     <div className="flex-1 flex flex-col pt-3 pb-4 px-4 relative">
       {/* Floating star popup */}
       <AnimatePresence>
-        {showFloatingStar && <FloatingStarPopup show={showFloatingStar} />}
+        {showFloatingStar && <FloatingStarPopup show={showFloatingStar} count={STARS_PER_WORD[state.difficulty] ?? 1} />}
       </AnimatePresence>
 
       {/* Mini confetti burst */}
@@ -599,6 +605,11 @@ export default function GamePlay({
               total={state.words.length}
             />
           )}
+          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+            <span className="text-xs font-display font-bold text-amber-500">
+              {'⭐'.repeat(STARS_PER_WORD[state.difficulty])} ×{STARS_PER_WORD[state.difficulty]}
+            </span>
+          </div>
           <StarCounter count={stars + state.starsEarnedThisLevel} size="sm" />
         </div>
       </div>
