@@ -66,11 +66,16 @@ function getSproutyExpression(phase: GamePhase, state: GameState): SproutyExpres
   const progress = state.currentWordIndex / state.words.length;
 
   if (state.mode === 'growth') {
-    if (state.growthPercent >= 90) return 'hurt';     // maximum tension, about to pop
-    if (state.growthPercent >= 75) return 'dizzy';    // eyes spinning, getting absurd
-    if (state.growthPercent >= 55) return 'worried';  // clearly uncomfortable
-    if (state.growthPercent >= 30) return 'excited';  // energized, getting bigger
-    return 'happy';
+    // Emotional arc tracks the inflation: calm & happy → having fun → a neutral
+    // "hm, okay" beat → uncomfortable (this is ~where the shake begins) →
+    // dizzy → about-to-pop. Most words bump him to the next beat, so there's a
+    // visible change almost every time a word is spelled.
+    if (state.growthPercent >= 90) return 'hurt';       // maximum tension, about to pop
+    if (state.growthPercent >= 76) return 'dizzy';      // eyes spinning, getting absurd
+    if (state.growthPercent >= 58) return 'worried';    // clearly uncomfortable
+    if (state.growthPercent >= 40) return 'determined'; // neutral "okay, that's enough now"
+    if (state.growthPercent >= 20) return 'excited';    // energized, this is fun
+    return 'happy';                                     // calm, just getting bigger
   }
 
   if (state.mode === 'battle') {

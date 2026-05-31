@@ -169,19 +169,39 @@ export default function SproutyRig({
   // Floret rides up off the swelling body.
   const floretLift = t * 8;
 
-  // Pressure tremble — gets faster & bigger the closer to bursting (guide §2.C
-  // anticipation). Only active while inflating.
-  const tremble: TargetAndTransition | undefined = inflating
+  // Pressure tremble — there is NO shake at all for the first stretch of
+  // inflation (Sprouty just grows, calm and happy). The tremble only begins
+  // once he's past SHAKE_START, and from there it ramps from nothing to a
+  // frantic, fast, big wobble as he nears bursting (guide §2.C anticipation).
+  //
+  // `s` is the shake intensity 0→1, measured across SHAKE_START→100% (not raw
+  // t), so it genuinely STARTS at zero at the threshold instead of snapping to
+  // a baseline. We ease it (s*s) so the onset is a gentle quiver that builds.
+  const SHAKE_START = 0.4;
+  const shakeRamp = Math.max(0, (t - SHAKE_START) / (1 - SHAKE_START)); // 0 until 40%, 0→1 over 40–100%
+  const s = shakeRamp * shakeRamp; // ease-in: barely-there quiver → violent shake
+  const shaking = inflating && shakeRamp > 0;
+  const tremble: TargetAndTransition | undefined = shaking
     ? {
-        x: [0, -1.2 * (0.4 + t), 1.2 * (0.4 + t), -0.8 * (0.4 + t), 0],
-        rotate: [0, -0.6 * t, 0.6 * t, -0.4 * t, 0],
+        // Amplitude grows from ~0 to a punchier peak (was ~1.2px max → ~3px).
+        x: [0, -3 * s, 3 * s, -2.2 * s, 1.6 * s, 0],
+        // More rotational "thrash" near the top so it reads as about-to-blow.
+        rotate: [0, -1.6 * s, 1.6 * s, -1.1 * s, 0.7 * s, 0],
         transition: {
           repeat: Infinity,
-          duration: Math.max(0.12, 0.34 - t * 0.2), // 0.34s → 0.14s as it fills
+          // Faster as it fills, and faster at the very top than before
+          // (0.40s lazy quiver → 0.09s frantic buzz).
+          duration: Math.max(0.09, 0.4 - s * 0.31),
           ease: 'easeInOut',
         },
       }
     : undefined;
+
+  // Below the shake threshold, keep Sprouty's natural calm IDLE BOB alive so
+  // early growth feels relaxed (just getting bigger), not nervous. Once he's
+  // shaking, the tremble group owns the motion and the bob steps aside.
+  const calmBob: TargetAndTransition | undefined =
+    inflating && !shaking ? (idle.body as TargetAndTransition) : undefined;
 
   return (
     <div
@@ -209,8 +229,10 @@ export default function SproutyRig({
           opacity="0.12"
         />
 
-        {/* Everything that should shake under pressure lives in this group. */}
-        <motion.g animate={tremble}>
+        {/* Everything that should shake under pressure lives in this group.
+            Below the shake threshold it does the calm idle bob instead, so the
+            early "just growing" phase stays relaxed. */}
+        <motion.g animate={tremble ?? calmBob}>
           {/* ══ LEGS — stubby legs descending from the body, feet angled outward
               (like the reference's little splayed stance). The leg is a tapered
               limb; the foot is an ellipse pointing out. They splay + drop as the

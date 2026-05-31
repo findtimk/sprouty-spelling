@@ -172,12 +172,15 @@ export default function SproutySandbox() {
       <h2 className="font-display text-lg font-bold text-green-800 mb-3">
         Inflation ramp (growth mode)
       </h2>
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 mb-8">
-        {[0, 25, 50, 75, 100].map((pct) => (
+      {/* Steps chosen to land ON each emotional beat (20/40/58/76/90) so the
+          full happy→excited→neutral→worried→dizzy→hurt arc is visible. Keep the
+          expression thresholds in sync with getSproutyExpression() in GamePlay. */}
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-3 mb-8">
+        {[0, 25, 40, 50, 65, 80, 100].map((pct) => (
           <div key={pct} className="bg-white rounded-xl p-3 shadow flex flex-col items-center">
             <div className="flex items-end justify-center" style={{ height: 160 }}>
               <SproutyRig
-                expression={pct >= 90 ? 'hurt' : pct >= 75 ? 'dizzy' : pct >= 55 ? 'worried' : pct >= 30 ? 'excited' : 'happy'}
+                expression={pct >= 90 ? 'hurt' : pct >= 76 ? 'dizzy' : pct >= 58 ? 'worried' : pct >= 40 ? 'determined' : pct >= 20 ? 'excited' : 'happy'}
                 inflated={pct}
                 size={100}
               />
