@@ -10,6 +10,7 @@ import VillainCharacter from '../components/VillainCharacter';
 import StarCounter from '../components/StarCounter';
 import RocketVisual from '../components/RocketVisual';
 import StackTowerVisual from '../components/StackTowerVisual';
+import { useViewportHeight } from '../hooks/useViewportHeight';
 
 // Fun phrases shown on correct answers
 const FUN_PHRASES = [
@@ -167,8 +168,16 @@ function ProgressIndicator({ mode, value, total }: { mode: string; value: number
 }
 
 function GrowthModeVisual({ state, equipped }: { state: GameState; equipped: GamePlayProps['equipped'] }) {
-  const baseSize = 72;
-  const size = Math.round(baseSize * (1 + (state.growthPercent / 100) * 1.8));
+  const vh = useViewportHeight();
+  // Responsive base: bigger than before and scales gently with screen height,
+  // clamped so it reads well on a phone but never gets huge on desktop.
+  const baseSize = Math.round(Math.max(92, Math.min(vh * 0.14, 124)));
+  // Inflated size is capped (relative to viewport height) so the fully-puffed
+  // balloon can't crowd the tiles pinned at the bottom, even on a short phone.
+  const size = Math.min(
+    Math.round(baseSize * (1 + (state.growthPercent / 100) * 1.8)),
+    Math.round(vh * 0.36),
+  );
   const vibrateClass = state.growthPercent >= 90 ? 'animate-vibrate-intense' :
                        state.growthPercent >= 75 ? 'animate-vibrate' : '';
   const glowClass = state.growthPercent >= 75 ? 'animate-glow-red' :
@@ -395,6 +404,9 @@ export default function GamePlay({
   onRetryLevel,
   onQuit,
 }: GamePlayProps) {
+  const vh = useViewportHeight();
+  // Non-growth Sprouty scales gently with screen height (was a fixed 80).
+  const nonGrowthSize = Math.round(Math.max(84, Math.min(vh * 0.12, 110)));
   const isInputDisabled = state.phase === 'correct' || state.phase === 'level-complete' || state.phase === 'battle-attack' || state.phase === 'battle-defeat';
   const [showFloatingStar, setShowFloatingStar] = useState(false);
   const [confettiCount, setConfettiCount] = useState(5);
@@ -619,6 +631,11 @@ export default function GamePlay({
         Word {state.currentWordIndex + 1} of {state.words.length}
       </div>
 
+      {/* STAGE — Sprouty + clue cluster, vertically centered in the upper space
+          so the character isn't glued to the top of the viewport and grows from
+          a centered position. The interactive (tiles) zone below is pinned to
+          the bottom, keeping a safe gap from the character even when inflated. */}
+      <div className="flex-1 flex flex-col justify-center items-stretch min-h-0">
       {/* Mode visual */}
       <ModeVisual state={state} equipped={equipped} />
 
@@ -627,7 +644,7 @@ export default function GamePlay({
         <div className="flex justify-center my-2 relative">
           <SproutyCharacter
             expression={sproutyExpression}
-            size={80}
+            size={nonGrowthSize}
             equipped={equipped}
           />
           <WrongAnswerStars show={state.phase === 'wrong' || state.phase === 'battle-villain-attack'} />
@@ -707,8 +724,12 @@ export default function GamePlay({
         )}
       </AnimatePresence>
 
-      {/* Interactive zone — fills remaining space and centers content vertically */}
-      <div className="flex-1 flex flex-col justify-center gap-4">
+      </div>{/* end STAGE */}
+
+      {/* Interactive zone — pinned toward the bottom (flex-none) so the letter
+          tiles stay put and keep clear of the character above, even as Sprouty
+          inflates. */}
+      <div className="flex-none flex flex-col justify-end gap-4 pt-2">
         {/* Answer slots */}
         <div className="flex justify-center gap-1.5 flex-wrap">
           <AnimatePresence mode="popLayout">
