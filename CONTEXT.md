@@ -12,7 +12,10 @@ This is a living document. It captures the *intent* behind the game — the goal
 
 A spelling game where the reward for spelling is **watching things happen to a broccoli character named Sprouty.**
 
-- Sprouty inflates like a balloon and eventually EXPLODES (growth mode — the flagship)
+- Sprouty inflates like a balloon and eventually EXPLODES (growth mode — the flagship, **the only playable mode right now**)
+
+**Parked for redesign** (kept in code, hidden from the kid, re-introduced one at a time once redesigned — see "Game modes" note below):
+
 - Sprouty battles other vegetable villains (battle mode)
 - Sprouty rides a rocket into space (rocket mode)
 - Sprouty climbs a stack of veggie blocks toward a flag (stack mode)
@@ -85,9 +88,19 @@ We started replacing the dull procedural broccoli with a **layered SVG rig** (`s
 
 **How to continue:** `npm run dev` → `/#sandbox` for the rig inspector (poses, inflation slider, finale burst). Play the first level (growth mode) for the live finale. All rig code lives in `src/components/sprouty/`. The plan file for this work: `~/.claude/plans/let-s-work-on-the-luminous-cloud.md`.
 
+### Game modes — down to one (deliberately, 2026-05-31)
+
+We **dialed back to a single playable mode: Super Sprout (growth).** Battle, Rocket, and Tower didn't look good or play well, so they're **parked for a full redesign** (new graphics + mechanics), to be re-introduced **one at a time** as each is rebuilt.
+
+- All three parked modes are **kept entirely in code** — the `GameMode` type, their components (`RocketVisual`, `StackTowerVisual`, `VillainCharacter`, `villains.ts`), per-mode state fields, and the ~30 mode conditionals in `GamePlay.tsx` / `LevelComplete.tsx` are all intact but **dormant**. They're flagged `comingSoon: true` in `src/game/modes.ts`.
+- The only lever is `getModeForLevel()` in `src/game/modes.ts` — it used to cycle growth→battle→rocket→stack by level; now it **always returns `growth`**. The original cycling line is preserved in a comment. Re-enabling a mode = drop its `comingSoon` flag and add it back to a rotation there.
+- The kid **doesn't see** the parked modes anywhere (the old four-mode info box on LevelSelect was removed; a single "🌱 Super Sprout" badge replaces it).
+
+**Future direction:** make **mode selectable** — the kid picks a mode *and* a level (order TBD). That mode-select screen gets built when the **second** mode is ready, not before (one playable mode = nothing to select yet). `playableModes` (derived in `modes.ts`) is the array that UI should consume.
+
 ### What's working
 
-- Four game modes with mode-specific visuals (all real SVG now — no emoji placeholders)
+- Super Sprout (growth) mode with real SVG visuals (no emoji placeholders)
 - Growth mode finale: shake → accelerating spin + swell → freeze → floret-confetti POP (+ flash & shake), no comeback — see rig section above
 - Per-word celebration tiers (small / medium / big)
 - Word streak counter with "🔥 X in a row!" badge at 3+
