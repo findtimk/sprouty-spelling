@@ -56,12 +56,38 @@ Right now there's no incentive to play harder difficulty levels — easy levels 
 
 ---
 
-## Current state (as of 2026-05-18)
+## Current state (as of 2026-05-31)
+
+### NEW: layered SVG rig (Phase 1 of the character overhaul)
+
+We started replacing the dull procedural broccoli with a **layered SVG rig** (`src/components/sprouty/`): separate floret / stalk / arms / face layers animated independently with framer-motion, so the floret can lag the body, the stalk can squash & stretch, etc. Built to match commissioned reference art (chunkier, friendlier) and the new **motion style guide** (`broccoli_motion_animation_style_guide.md`). Decision log: rig in framer-motion (not Rive — defer until SVG limits us); pre-rendered sprite effects long-term, coded particles for now.
+
+- `SproutyRig.tsx` — the puppet. `motions.ts` — idle bob/floret-lag/balloon helpers. `ConfettiPop.tsx` — the new floret-confetti burst. `constants.ts` — `HEAD_ANCHOR` reserved for future hat placement.
+- **Stable interface preserved:** `SproutyCharacter` still owns the 9 call sites. It now delegates to the rig as the DEFAULT (whenever nothing is equipped) — so the new character shows end-to-end: start screen, new game, between words, growth, victories. It falls back to the OLD procedural SVG only when a cosmetic (hat/skin/accessory/dance) is equipped, since the rig doesn't render cosmetics yet. So a player with an equipped item still sees old art for that render until Phase 3 builds cosmetics into the rig.
+- **Inflation = funny balloon, not just a scale-up.** Body scales from its OWN bounding-box center (`transformBox: 'fill-box'`) so it puffs symmetrically (earlier it drifted off-center). Goes nearly spherical at 100% (`BODY_SCALEX_GAIN` in motions.ts — also used by the rig to anchor limbs to the scaled body edge). Limbs DON'T scale: they stay tiny, attach to the body edge, and stiffen straight out + tremble (the tremble speeds up the closer to bursting). Floret is protected — rides up + squishes but keeps its leafy shape. Net read: "tiny broccoli straining to hold in a giant balloon body."
+- **Growth finale = dramatic "spin-up & POP"** (`LevelComplete.tsx` `GrowthExplosion`): the 100% broccoli shakes harder → spins FASTER and faster while swelling + lifting off → a tiny freeze at max → big **floret-confetti POP** (`ConfettiPop` at intensity 1.8) with a white screen-flash + quick screen shake. **No comeback** — Sprouty pops and is gone; the burst settles straight into the results card (growth `contentDelay` bumped to ~2350ms to match the ~2.45s sequence). `BrainCharacter` is orphaned (delete in a later cleanup). Real explosion sprite assets are a future swap-in for `ConfettiPop`.
+- **Dev sandbox** at `/#sandbox` (dev-only, excluded from prod) renders the rig, all expressions, the inflation ramp, an in-scene gameplay mock, and the finale.
+
+**Known limitations (as of this shippable state):**
+- **Two characters coexist.** The new rig is the default, but the moment any cosmetic is equipped, that render reverts to the OLD procedural SVG (`SproutyCharacter`). A kid who buys a hat sees the old-style broccoli for that render. Not broken, but inconsistent — resolved by Phase 3.
+- **Rig renders no cosmetics yet** (no hats/skins/accessories/dances). `HEAD_ANCHOR` (in `constants.ts`) is reserved for hat placement but unused.
+- **Finale spin feel is un-tuned-by-eye.** The spin-up/freeze/POP timing was built to spec and verified to compile + render, but the *feel* (spin speed, swell amount, shake intensity) was not yet adjusted against a live human playthrough. First thing to sanity-check next session: play a growth level and tune `GrowthExplosion`'s keyframes.
+- **`BrainCharacter.tsx` is orphaned** (no longer used by the finale) but not deleted.
+- **Old procedural SVG still carries all the skin/hat/dance logic** (~1000 lines in `SproutyCharacter.tsx`) — dead weight once Phase 3 lands.
+- **8 pre-existing repo lint errors** remain (random-in-render / setState-in-effect in `Confetti.tsx`, `GamePlay.tsx`, `LevelComplete.tsx`). Not introduced by this work; left as-is.
+
+**Next phases (in priority order):**
+- **P2 — migrate remaining scenes & retire old SVG.** Move every non-growth render onto the rig; once cosmetics exist on the rig, delete the procedural body. (Right now the rig is already the default for non-cosmetic renders, so the visible gap is really just cosmetics.)
+- **P3 — cosmetics on the rig.** The big one. Either (a) the 10 commissioned personas as full costume-Sproutys (perfect hat alignment by construction), or (b) separate hat/accessory layers anchored to `HEAD_ANCHOR`. Reconcile with `shopItems.ts` (8 hats / 8 accessories / 8 skins / 7 dances). This closes the "two characters" gap.
+- **P4 — real explosion/effect art.** Swap coded `ConfettiPop` for pre-rendered sprite-sheet/Lottie frames (the user flagged this). `ConfettiPop` is the single swap point.
+- **P5 — dances as rig motions** + delete `BrainCharacter.tsx` and dead SVG/shop code.
+
+**How to continue:** `npm run dev` → `/#sandbox` for the rig inspector (poses, inflation slider, finale burst). Play the first level (growth mode) for the live finale. All rig code lives in `src/components/sprouty/`. The plan file for this work: `~/.claude/plans/let-s-work-on-the-luminous-cloud.md`.
 
 ### What's working
 
 - Four game modes with mode-specific visuals (all real SVG now — no emoji placeholders)
-- Growth mode explosion sequence: tension → flash + debris + BOOM! → dancing brain
+- Growth mode finale: shake → accelerating spin + swell → freeze → floret-confetti POP (+ flash & shake), no comeback — see rig section above
 - Per-word celebration tiers (small / medium / big)
 - Word streak counter with "🔥 X in a row!" badge at 3+
 - Always-visible word clue speech bubble

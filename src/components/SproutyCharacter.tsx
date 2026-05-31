@@ -1,4 +1,5 @@
 import { motion, type TargetAndTransition } from 'framer-motion';
+import SproutyRig from './sprouty/SproutyRig';
 
 export type SproutyExpression = 'happy' | 'excited' | 'worried' | 'determined' | 'celebrating' | 'dizzy' | 'hurt';
 
@@ -116,6 +117,25 @@ export default function SproutyCharacter({
   inflated = 0,
   equipped,
 }: SproutyCharacterProps) {
+  // The new layered rig is the DEFAULT look everywhere — start screen, new
+  // game, between words, growth mode — so the character is consistent end to
+  // end. The rig doesn't render cosmetics yet (hats/skins/accessories/dances —
+  // that's a later phase), so we fall back to the legacy procedural SVG below
+  // ONLY when something is equipped. This keeps the shop's purchased items
+  // visible until they're rebuilt on the rig.
+  const hasCosmetic = !!(equipped?.hat || equipped?.skin || equipped?.accessory || equipped?.dance);
+  if (!hasCosmetic) {
+    return (
+      <SproutyRig
+        expression={expression}
+        size={size}
+        scale={scale}
+        inflated={inflated}
+        className={className}
+      />
+    );
+  }
+
   const eyes      = getEyeProps(expression);
   const mouthPath = getMouthPath(expression);
   const colors    = getSkinColors(equipped?.skin);

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
-import BrainCharacter from '../components/BrainCharacter';
+import SproutyRig from '../components/sprouty/SproutyRig';
+import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
 import type { Difficulty } from '../game/words';
@@ -27,7 +28,7 @@ interface LevelCompleteProps {
 function getModeMessage(mode: GameMode, villainName?: string): { title: string; subtitle: string } {
   switch (mode) {
     case 'growth':
-      return { title: 'BOOM! 💥', subtitle: 'Sprouty grew so big they exploded!' };
+      return { title: 'POP! 🎉', subtitle: 'Sprouty puffed up and POPPED into confetti!' };
     case 'battle':
       return { title: 'Victory! ⚔️', subtitle: `${villainName || 'The villain'} has been defeated!` };
     case 'rocket':
@@ -37,114 +38,108 @@ function getModeMessage(mode: GameMode, villainName?: string): { title: string; 
   }
 }
 
-/** Random debris chunk for the explosion */
-function DebrisChunk({ index }: { index: number }) {
-  const angle = (index / 10) * 360 + Math.random() * 36;
-  const dist = 80 + Math.random() * 80;
-  const rad = (angle * Math.PI) / 180;
-  const tx = Math.cos(rad) * dist;
-  const ty = Math.sin(rad) * dist;
-  const size = 8 + Math.random() * 10;
-  const colors = ['#4ade80', '#22c55e', '#bbf7d0', '#86efac', '#fbbf24', '#f87171'];
-  const color = colors[index % colors.length];
-  const isCircle = index % 3 !== 0;
-
-  return (
-    <motion.div
-      className="absolute"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: isCircle ? '50%' : '3px',
-        backgroundColor: color,
-        left: '50%',
-        top: '50%',
-        marginLeft: -size / 2,
-        marginTop: -size / 2,
-      }}
-      initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-      animate={{
-        x: tx,
-        y: ty + 40,
-        opacity: [1, 1, 0],
-        rotate: Math.random() * 720 - 360,
-      }}
-      transition={{ duration: 0.9, ease: [0.2, 0, 0.8, 1], delay: index * 0.02 }}
-    />
-  );
-}
-
-/** Growth mode explosion sequence */
-function GrowthExplosion({ equipped, onDone }: { equipped: LevelCompleteProps['equipped']; onDone: () => void }) {
-  const [phase, setPhase] = useState<'tension' | 'explode' | 'brain'>('tension');
+/**
+ * Growth-mode finale — the dramatic "spin-up & POP" (style guide §7.8 → §7.9).
+ *
+ * Builds tension so the pop is EARNED, then bursts. No comeback — Sprouty pops
+ * and is gone; the burst settles into the results card. Harmless/funny, not
+ * violent ("still a broccoli, even when it pops").
+ *
+ *   1. WINDUP   — the fully-puffed broccoli shakes, harder and harder. "Uh oh."
+ *   2. SPINUP   — spins FASTER and faster while swelling bigger + lifting off
+ *                 the ground, like a balloon straining to blow.
+ *   3. FREEZE   — a hard half-beat of stillness at max size (anticipation).
+ *   4. POP      — instant cut to a big floret-confetti burst + "POP!", a white
+ *                 screen-flash and a quick screen shake. Then done.
+ */
+function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => void }) {
+  const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
   const doneRef = useRef(false);
+  const popRef = useRef(false);
 
+  // Beat lengths (ms): windup .55, spinup 1.2, freeze .15, pop ~.55 → ~2.45s.
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('explode'), 500);
-    const t2 = setTimeout(() => setPhase('brain'), 1200);
-    const t3 = setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, 1600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onDone]);
+    const t1 = setTimeout(() => setPhase('spinup'), 550);
+    const t2 = setTimeout(() => setPhase('freeze'), 1750);
+    const t3 = setTimeout(() => {
+      setPhase('pop');
+      if (!popRef.current) { popRef.current = true; onPop?.(); } // fire flash + shake
+    }, 1900);
+    const t4 = setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, 2450);
+    return () => { [t1, t2, t3, t4].forEach(clearTimeout); };
+  }, [onDone, onPop]);
 
   return (
-    <div className="relative flex items-center justify-center" style={{ height: 180 }}>
+    <div className="relative flex items-center justify-center" style={{ height: 220 }}>
       <AnimatePresence mode="wait">
-        {phase === 'tension' && (
+        {phase === 'windup' && (
           <motion.div
-            key="tension"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: [0.8, 1.0, 0.95, 1.05, 0.98, 1.08] }}
-            exit={{ scale: 1.5, opacity: 0 }}
-            transition={{ duration: 0.45 }}
-            className="animate-vibrate-intense"
+            key="windup"
+            initial={{ x: 0, rotate: 0 }}
+            // escalating shake — amplitude grows across the beat
+            animate={{
+              x: [0, -2, 2, -3, 3, -5, 5, -7, 7],
+              rotate: [0, -1, 1, -2, 2, -3, 3, -4, 4],
+            }}
+            transition={{ duration: 0.55, ease: 'easeIn' }}
+            style={{ transformOrigin: 'center bottom' }}
           >
-            <SproutyCharacter expression="hurt" size={140} scale={1} equipped={equipped} inflated={100} />
+            <SproutyRig expression="hurt" size={150} inflated={100} />
           </motion.div>
         )}
 
-        {phase === 'explode' && (
-          <motion.div key="explode" className="relative" style={{ width: 200, height: 180 }}>
-            {/* Central flash */}
-            <motion.div
-              className="absolute rounded-full"
-              style={{ width: 120, height: 120, left: 40, top: 30, backgroundColor: '#fffde7' }}
-              initial={{ scale: 0, opacity: 1 }}
-              animate={{ scale: [0, 3, 0], opacity: [1, 0.8, 0] }}
-              transition={{ duration: 0.45 }}
-            />
-            {/* Debris chunks */}
-            <div className="absolute" style={{ left: 100, top: 90 }}>
-              {Array.from({ length: 10 }, (_, i) => <DebrisChunk key={i} index={i} />)}
+        {phase === 'spinup' && (
+          <motion.div
+            key="spinup"
+            initial={{ rotate: 0, scale: 1, y: 0 }}
+            // accelerating spin (times weighted so it speeds up), swelling, lift-off
+            animate={{
+              rotate: [0, 90, 270, 630, 1170],
+              scale: [1, 1.12, 1.28, 1.45, 1.6],
+              y: [0, -6, -14, -22, -30],
+            }}
+            transition={{ duration: 1.2, times: [0, 0.35, 0.6, 0.82, 1], ease: 'easeIn' }}
+            style={{ transformOrigin: 'center center' }}
+          >
+            <SproutyRig expression="hurt" size={150} inflated={100} />
+          </motion.div>
+        )}
+
+        {phase === 'freeze' && (
+          <motion.div
+            key="freeze"
+            initial={{ scale: 1.6, y: -30, rotate: 0 }}
+            animate={{ scale: 1.62, y: -31 }}   // dead-still hold at max
+            transition={{ duration: 0.15 }}
+            style={{ transformOrigin: 'center center' }}
+          >
+            <SproutyRig expression="hurt" size={150} inflated={100} />
+          </motion.div>
+        )}
+
+        {phase === 'pop' && (
+          <motion.div key="pop" className="relative flex items-center justify-center" style={{ width: 260, height: 220 }}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ConfettiPop size={280} intensity={1.8} />
             </div>
-            {/* BOOM text */}
+            {/* bouncy POP! text */}
             <motion.div
               className="absolute"
-              style={{ left: '50%', top: '30%', transform: 'translateX(-50%)' }}
-              initial={{ scale: 0, rotate: -10 }}
-              animate={{ scale: [0, 1.8, 1.4], rotate: [-10, 5, 0] }}
-              transition={{ duration: 0.4, delay: 0.1 }}
+              style={{ left: '50%', top: '24%', transform: 'translateX(-50%)' }}
+              initial={{ scale: 0, rotate: -12 }}
+              animate={{ scale: [0, 1.8, 1.4], rotate: [-12, 6, 0] }}
+              transition={{ duration: 0.4 }}
             >
               <span
-                className="font-display font-extrabold text-6xl text-yellow-400 whitespace-nowrap"
+                className="font-display font-extrabold text-7xl text-green-500 whitespace-nowrap"
                 style={{
-                  textShadow: '3px 3px 0 #f97316, -3px -3px 0 #f97316, 3px -3px 0 #f97316, -3px 3px 0 #f97316',
-                  WebkitTextStroke: '2px #dc2626',
+                  textShadow: '3px 3px 0 #fbbf24, -3px -3px 0 #fbbf24, 3px -3px 0 #fbbf24, -3px 3px 0 #fbbf24',
+                  WebkitTextStroke: '2px #166534',
                 }}
               >
-                BOOM!
+                POP!
               </span>
             </motion.div>
-          </motion.div>
-        )}
-
-        {phase === 'brain' && (
-          <motion.div
-            key="brain"
-            initial={{ scale: 0, rotate: -20 }}
-            animate={{ scale: [0, 1.3, 1], rotate: [-20, 8, 0] }}
-            transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-          >
-            <BrainCharacter size={130} danceId={equipped.dance} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -165,6 +160,7 @@ export default function LevelComplete({
   const [showConfetti, setShowConfetti] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [explosionDone, setExplosionDone] = useState(false);
+  const [popFx, setPopFx] = useState(false); // white flash + screen shake on POP
   const message = getModeMessage(mode, villainName);
 
   const maxStars = wordsTotal * STARS_PER_WORD[difficulty];
@@ -173,7 +169,9 @@ export default function LevelComplete({
     starsEarned >= Math.ceil(maxStars * 0.7) ? 'good' : 'partial';
 
   const confettiCount = mode === 'growth' ? 100 : performanceLevel === 'perfect' ? 120 : performanceLevel === 'good' ? 60 : 20;
-  const contentDelay = mode === 'growth' ? 1800 : 800;
+  // Growth finale runs ~2.45s (windup→spinup→freeze→pop); let the burst settle
+  // before the results card slides in so there's no empty gap.
+  const contentDelay = mode === 'growth' ? 2350 : 800;
 
   useEffect(() => {
     setShowConfetti(true);
@@ -186,7 +184,25 @@ export default function LevelComplete({
     : message.subtitle;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24 relative">
+    <motion.div
+      className="flex-1 flex flex-col items-center justify-center px-6 pb-24 relative"
+      // quick screen shake when Sprouty pops
+      animate={popFx ? { x: [0, -8, 7, -5, 4, -2, 0], y: [0, 5, -4, 3, -2, 0] } : { x: 0, y: 0 }}
+      transition={popFx ? { duration: 0.35, ease: 'easeOut' } : { duration: 0 }}
+    >
+      {/* white screen-flash on POP — a single quick blink, not a strobe */}
+      <AnimatePresence>
+        {popFx && (
+          <motion.div
+            key="popflash"
+            className="fixed inset-0 pointer-events-none z-50 bg-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.85, 0] }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          />
+        )}
+      </AnimatePresence>
+
       <Confetti active={showConfetti} count={confettiCount} />
 
       {/* Mode-specific celebration */}
@@ -197,7 +213,10 @@ export default function LevelComplete({
         className="mb-4"
       >
         {mode === 'growth' && (
-          <GrowthExplosion equipped={equipped} onDone={() => setExplosionDone(true)} />
+          <GrowthExplosion
+            onDone={() => setExplosionDone(true)}
+            onPop={() => { setPopFx(true); setTimeout(() => setPopFx(false), 400); }}
+          />
         )}
         {mode === 'battle' && (
           <SproutyCharacter expression="celebrating" size={140} equipped={equipped} />
@@ -324,6 +343,6 @@ export default function LevelComplete({
           </div>
         </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

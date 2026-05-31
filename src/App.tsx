@@ -11,6 +11,7 @@ import LevelComplete from './screens/LevelComplete';
 import Shop from './screens/Shop';
 import Settings from './screens/Settings';
 import NavBar from './components/NavBar';
+import SproutySandbox from './screens/dev/SproutySandbox';
 
 type Screen = 'home' | 'levels' | 'playing' | 'complete' | 'shop' | 'settings';
 
@@ -133,6 +134,11 @@ export default function App() {
   }
 
   const showNav = screen !== 'playing' && screen !== 'complete';
+
+  // Dev-only rig inspection page at /#sandbox. Excluded from production builds.
+  if (import.meta.env.DEV && typeof location !== 'undefined' && location.hash === '#sandbox') {
+    return <SproutySandbox />;
+  }
 
   return (
     <>
