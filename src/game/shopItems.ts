@@ -10,15 +10,15 @@ export interface ShopItem {
 }
 
 export const shopItems: ShopItem[] = [
-  // Hats (15 stars)
-  { id: 'hat-chef', name: 'Chef Hat', category: 'hat', cost: 15, emoji: '👨‍🍳', description: 'Cook up some words!' },
-  { id: 'hat-crown', name: 'Royal Crown', category: 'hat', cost: 15, emoji: '👑', description: 'Spelling royalty!' },
-  { id: 'hat-pirate', name: 'Pirate Hat', category: 'hat', cost: 15, emoji: '🏴‍☠️', description: 'Arrr, spell that!' },
-  { id: 'hat-space', name: 'Space Helmet', category: 'hat', cost: 15, emoji: '🪖', description: 'To infinity!' },
-  { id: 'hat-cowboy', name: 'Cowboy Hat', category: 'hat', cost: 15, emoji: '🤠', description: 'Yeehaw, partner!' },
-  { id: 'hat-wizard', name: 'Wizard Hat', category: 'hat', cost: 15, emoji: '🧙', description: 'Hocus pocus spell!' },
-  { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 15, emoji: '🎉', description: "Let's celebrate!" },
-  { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 15, emoji: '🎩', description: 'Very distinguished!' },
+  // Hats (10 stars)
+  { id: 'hat-chef', name: 'Chef Hat', category: 'hat', cost: 10, emoji: '👨‍🍳', description: 'Cook up some words!' },
+  { id: 'hat-crown', name: 'Royal Crown', category: 'hat', cost: 10, emoji: '👑', description: 'Spelling royalty!' },
+  { id: 'hat-pirate', name: 'Pirate Hat', category: 'hat', cost: 10, emoji: '🏴‍☠️', description: 'Arrr, spell that!' },
+  { id: 'hat-space', name: 'Space Helmet', category: 'hat', cost: 10, emoji: '🪖', description: 'To infinity!' },
+  { id: 'hat-cowboy', name: 'Cowboy Hat', category: 'hat', cost: 10, emoji: '🤠', description: 'Yeehaw, partner!' },
+  { id: 'hat-wizard', name: 'Wizard Hat', category: 'hat', cost: 10, emoji: '🧙', description: 'Hocus pocus spell!' },
+  { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 10, emoji: '🎉', description: "Let's celebrate!" },
+  { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 10, emoji: '🎩', description: 'Very distinguished!' },
 
   // Accessories (25 stars)
   { id: 'acc-sunglasses', name: 'Cool Shades', category: 'accessory', cost: 25, emoji: '😎', description: 'Too cool for school' },
