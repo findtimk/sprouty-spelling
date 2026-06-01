@@ -69,7 +69,7 @@ const EXPRESSIONS: SproutyExpression[] = [
 const HATS: { id: string | null; label: string }[] = [
   { id: null, label: 'None' },
   { id: 'hat-cowboy', label: '🤠 Cowboy' },
-  { id: 'hat-space', label: '🪖 Space (WIP)' },
+  { id: 'hat-space', label: '🪖 Space' },
 ];
 
 export default function SproutySandbox() {

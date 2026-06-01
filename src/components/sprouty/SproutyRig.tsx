@@ -20,7 +20,7 @@
 import { motion } from 'framer-motion';
 import type { TargetAndTransition } from 'framer-motion';
 import { idle, bodyScale, floretSquish, BODY_SCALEX_GAIN } from './motions';
-import SproutyHat, { HAT_ANCHORS, type RigHatId } from './SproutyHat';
+import SproutyHat, { HAT_ANCHORS, HAT_MOTION, type RigHatId } from './SproutyHat';
 
 export type SproutyExpression =
   | 'happy'
@@ -174,19 +174,13 @@ export default function SproutyRig({
   const floretLift = t * 8;
 
   // HAT motion (rig-native cosmetics). The hat is a SIBLING of the floret group
-  // (not a child) so it does NOT inherit the floret's squish — we want the head
-  // to squash but the hat to keep its shape, just riding/tilting/widening a bit.
-  //   • lift: matches the floret's lift + a touch extra so the brim clears the
-  //     crown as the body rounds and pushes the head up.
-  //   • scaleX: brim widens GENTLY with the head (much less than the floret's
-  //     0.22 gain) so it grows believably without distorting.
-  //   • tilt: a few degrees of jaunty lean that grows with inflation, selling
-  //     "perched on a straining balloon."
-  const hatLift = floretLift + t * 6;
-  const hatScaleX = 1 + t * 0.12;
-  const hatScaleY = 1 + t * 0.05;
-  const hatTilt = t * 6; // degrees
+  // (not a child) so it does NOT inherit the floret's squish. HOW it rides the
+  // inflation is per-hat data (HAT_MOTION in SproutyHat.tsx): the cowboy hat sits
+  // on top and widens/tilts gently; the space helmet ENCLOSES the head and tracks
+  // the floret's exact widen/squish/lift so the face stays framed in its port.
   const rigHat = hat && hat in HAT_ANCHORS ? (hat as RigHatId) : null;
+  const hatProfile = rigHat ? HAT_MOTION[rigHat] : null;
+  const hatRide = hatProfile ? hatProfile.ride(t) : null;
 
   // Pressure tremble — there is NO shake at all for the first stretch of
   // inflation (Sprouty just grows, calm and happy). The tremble only begins
@@ -377,12 +371,12 @@ export default function SproutyRig({
               tremble/calm-bob group (it's the parent), so it shakes with the
               body near max for free. Drawn AFTER the floret so it sits on top of
               the crown. */}
-          {rigHat && (
+          {rigHat && hatProfile && (
             <motion.g
-              style={{ transformBox: 'fill-box', transformOrigin: 'center bottom' }}
+              style={{ transformBox: 'fill-box', transformOrigin: hatProfile.origin }}
               animate={
                 inflating
-                  ? { y: -hatLift, scaleX: hatScaleX, scaleY: hatScaleY, rotate: hatTilt }
+                  ? hatRide! /* per-hat ride curve (see HAT_MOTION) */
                   : idle.floret /* gentle bob/wobble in lockstep with the head at rest */
               }
               transition={inflating ? { type: 'spring', stiffness: 200, damping: 13 } : undefined}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
 import SproutyRig from '../components/sprouty/SproutyRig';
-import SproutyHat, { RIG_HATS } from '../components/sprouty/SproutyHat';
+import SproutyHat, { RIG_HATS, HAT_MOTION, type RigHatId } from '../components/sprouty/SproutyHat';
 import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
@@ -56,10 +56,15 @@ function getModeMessage(mode: GameMode, villainName?: string): { title: string; 
 function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: () => void; hat?: string | null }) {
   const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
   const rigHat = hat && RIG_HATS.has(hat) ? hat : null;
+  // Some hats (the space helmet) FALL BACK and bounce after popping off — that
+  // landing beat takes longer, so we hold the pop subtree open until it lands.
+  const lands = rigHat ? !!HAT_MOTION[rigHat as RigHatId]?.landsAfterPop : false;
   const doneRef = useRef(false);
   const popRef = useRef(false);
 
   // Beat lengths (ms): windup .55, spinup 1.2, freeze .15, pop ~.55 → ~2.45s.
+  // When a hat lands after the pop, extend the final beat so the fall+bounce
+  // (~1.5s) finishes before the pop subtree unmounts.
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('spinup'), 550);
     const t2 = setTimeout(() => setPhase('freeze'), 1750);
@@ -67,9 +72,9 @@ function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: (
       setPhase('pop');
       if (!popRef.current) { popRef.current = true; onPop?.(); } // fire flash + shake
     }, 1900);
-    const t4 = setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, 2450);
+    const t4 = setTimeout(() => { if (!doneRef.current) { doneRef.current = true; onDone(); } }, lands ? 3500 : 2450);
     return () => { [t1, t2, t3, t4].forEach(clearTimeout); };
-  }, [onDone, onPop]);
+  }, [onDone, onPop, lands]);
 
   return (
     <div className="relative flex items-center justify-center" style={{ height: 220 }}>
@@ -124,22 +129,51 @@ function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: (
             <div className="absolute inset-0 flex items-center justify-center">
               <ConfettiPop size={280} intensity={1.8} />
             </div>
-            {/* HAT POP-OFF — when Sprouty bursts, his hat launches up, spins,
-                and fades out with the confetti. A fun little "where'd it go?"
-                beat that makes the cosmetic part of the payoff. */}
+            {/* HAT POP-OFF — when Sprouty bursts, his hat launches off with the
+                confetti. A fun "where'd it go?" beat that makes the cosmetic part
+                of the payoff. Two flavors:
+                  • most hats (cowboy): fly up, spin, and fade away.
+                  • the space helmet: a heavy object — it arcs up, spins, then
+                    FALLS BACK DOWN, bounces, and settles upright on the ground at
+                    center (empty, no broccoli). */}
             {rigHat && (
-              <motion.div
-                className="absolute"
-                style={{ left: '50%', top: '12%', transform: 'translateX(-50%)' }}
-                initial={{ y: 0, rotate: 0, opacity: 1, scale: 1.4 }}
-                animate={{ y: -120, rotate: 480, opacity: [1, 1, 0], scale: 1.5 }}
-                transition={{ duration: 0.85, ease: 'easeOut', times: [0, 0.7, 1] }}
-              >
-                {/* viewBox spans the TALL crown (~y-22) down past the brim (~y45) */}
-                <svg viewBox="9 -28 102 95" width={130} height={105} overflow="visible">
-                  <SproutyHat hatId={rigHat} t={1} />
-                </svg>
-              </motion.div>
+              lands ? (
+                <motion.div
+                  className="absolute"
+                  style={{ left: '50%', top: '12%', x: '-50%' }}
+                  initial={{ y: 0, rotate: 0, scale: 1.4 }}
+                  // up → spin → fall past center to the ground line (~+145) →
+                  // two decaying bounces → settle upright (rotate ends at 720°).
+                  animate={{
+                    y:      [0,   -90,  -110, 40,  145, 120, 145, 138, 145],
+                    rotate: [0,   240,  420,  600, 690, 712, 720, 720, 720],
+                    scale:  [1.4, 1.5,  1.5,  1.45, 1.4, 1.4, 1.4, 1.4, 1.4],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    times: [0, 0.18, 0.30, 0.52, 0.66, 0.78, 0.88, 0.94, 1],
+                    ease: 'easeOut',
+                  }}
+                >
+                  {/* viewBox spans the antenna (~y-14) past the collar (~y101) */}
+                  <svg viewBox="0 -18 120 128" width={130} height={139} overflow="visible">
+                    <SproutyHat hatId={rigHat} t={1} />
+                  </svg>
+                </motion.div>
+              ) : (
+                <motion.div
+                  className="absolute"
+                  style={{ left: '50%', top: '12%', transform: 'translateX(-50%)' }}
+                  initial={{ y: 0, rotate: 0, opacity: 1, scale: 1.4 }}
+                  animate={{ y: -120, rotate: 480, opacity: [1, 1, 0], scale: 1.5 }}
+                  transition={{ duration: 0.85, ease: 'easeOut', times: [0, 0.7, 1] }}
+                >
+                  {/* viewBox spans the TALL crown (~y-22) down past the brim (~y45) */}
+                  <svg viewBox="9 -28 102 95" width={130} height={105} overflow="visible">
+                    <SproutyHat hatId={rigHat} t={1} />
+                  </svg>
+                </motion.div>
+              )
             )}
             {/* bouncy POP! text */}
             <motion.div
@@ -189,8 +223,12 @@ export default function LevelComplete({
 
   const confettiCount = mode === 'growth' ? 100 : performanceLevel === 'perfect' ? 120 : performanceLevel === 'good' ? 60 : 20;
   // Growth finale runs ~2.45s (windup→spinup→freeze→pop); let the burst settle
-  // before the results card slides in so there's no empty gap.
-  const contentDelay = mode === 'growth' ? 2350 : 800;
+  // before the results card slides in so there's no empty gap. When the equipped
+  // hat lands after popping (the helmet's fall+bounce), the finale runs longer —
+  // hold the card until the helmet has landed.
+  const rigHat = equipped?.hat && RIG_HATS.has(equipped.hat) ? equipped.hat : null;
+  const helmetLands = !!(rigHat && HAT_MOTION[rigHat as RigHatId]?.landsAfterPop);
+  const contentDelay = mode === 'growth' ? (helmetLands ? 3450 : 2350) : 800;
 
   useEffect(() => {
     setShowConfetti(true);
