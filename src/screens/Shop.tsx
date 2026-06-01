@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
 import StarCounter from '../components/StarCounter';
-import { shopItems, type ShopCategory, type ShopItem } from '../game/shopItems';
+import { getAvailableItems, type ShopCategory, type ShopItem } from '../game/shopItems';
 
 interface ShopProps {
   stars: number;
@@ -20,11 +20,17 @@ const categories: { id: ShopCategory; label: string; icon: string }[] = [
   { id: 'dance', label: 'Dances', icon: '💃' },
 ];
 
+// Only show category tabs that currently have rig-supported items. As cosmetics
+// get rebuilt on the rig (see isItemAvailable), their categories reappear here.
+const visibleCategories = categories.filter(cat => getAvailableItems(cat.id).length > 0);
+
 export default function Shop({ stars, inventory, equipped, onBuy, onEquip, onBack }: ShopProps) {
-  const [activeCategory, setActiveCategory] = useState<ShopCategory>('hat');
+  const [activeCategory, setActiveCategory] = useState<ShopCategory>(
+    visibleCategories[0]?.id ?? 'hat',
+  );
   const [justBought, setJustBought] = useState<string | null>(null);
 
-  const items = shopItems.filter(item => item.category === activeCategory);
+  const items = getAvailableItems(activeCategory);
 
   const handleBuy = (item: ShopItem) => {
     if (stars >= item.cost && !inventory.includes(item.id)) {
@@ -73,7 +79,7 @@ export default function Shop({ stars, inventory, equipped, onBuy, onEquip, onBac
 
       {/* Category tabs */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-        {categories.map(cat => (
+        {visibleCategories.map(cat => (
           <button
             key={cat.id}
             onPointerDown={(e) => { e.preventDefault(); setActiveCategory(cat.id); }}
@@ -89,8 +95,10 @@ export default function Shop({ stars, inventory, equipped, onBuy, onEquip, onBac
         ))}
       </div>
 
-      {/* Items grid */}
-      <div className="grid grid-cols-2 gap-3 flex-1">
+      {/* Items grid — cards size to their content (items-start) and the grid only
+          takes the height it needs, so a short catalog doesn't stretch into tall,
+          mostly-empty cards. Scrolls if the catalog grows past the viewport. */}
+      <div className="grid grid-cols-2 gap-3 items-start flex-1 overflow-y-auto content-start">
         <AnimatePresence mode="popLayout">
           {items.map((item, i) => {
             const owned = inventory.includes(item.id);

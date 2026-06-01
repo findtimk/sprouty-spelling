@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useGameState } from './hooks/useGameState';
 import type { Difficulty } from './game/words';
-import type { ShopCategory } from './game/shopItems';
+import { shopItems, isItemAvailable, type ShopCategory } from './game/shopItems';
 import HomeScreen from './screens/HomeScreen';
 import LevelSelect from './screens/LevelSelect';
 import GamePlay from './screens/GamePlay';
@@ -48,6 +48,28 @@ export default function App() {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
 
   const game = useGameState();
+
+  // On load, auto-unequip any item that's no longer available (not yet rebuilt
+  // on the new rig). This keeps a returning kid who had an old-art item equipped
+  // from seeing the character revert to the old design. Ownership (inventory) is
+  // untouched, so the item re-equips fine once it's added back.
+  useEffect(() => {
+    setEquipped(prev => {
+      const keep = (id: string | null) =>
+        id && shopItems.some(item => item.id === id && isItemAvailable(item)) ? id : null;
+      const next: Equipped = {
+        hat: keep(prev.hat),
+        accessory: keep(prev.accessory),
+        skin: keep(prev.skin),
+        dance: keep(prev.dance),
+      };
+      const unchanged =
+        next.hat === prev.hat && next.accessory === prev.accessory &&
+        next.skin === prev.skin && next.dance === prev.dance;
+      return unchanged ? prev : next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
 
   const handlePlay = useCallback(() => {
     setScreen('levels');

@@ -1,3 +1,5 @@
+import { RIG_HATS } from '../components/sprouty/SproutyHat';
+
 export type ShopCategory = 'hat' | 'accessory' | 'skin' | 'dance';
 
 export interface ShopItem {
@@ -52,4 +54,26 @@ export const shopItems: ShopItem[] = [
 
 export function getItemsByCategory(category: ShopCategory): ShopItem[] {
   return shopItems.filter(item => item.category === category);
+}
+
+/**
+ * Whether an item is rebuilt on the new character rig and therefore safe to
+ * show in the shop / equip — equipping it won't revert the character to the old
+ * procedural art. The shop hides everything else until it's rebuilt, so kids
+ * never spend stars on an item that jumps back to the old design.
+ *
+ * Expand this as cosmetics get rebuilt on the rig:
+ *   • hats — gated by RIG_HATS (cowboy, space today; the single source of truth).
+ *   • accessory / skin / dance — none on the rig yet → all hidden for now.
+ */
+export function isItemAvailable(item: ShopItem): boolean {
+  if (item.category === 'hat') return RIG_HATS.has(item.id);
+  return false;
+}
+
+/** Items that are currently available (rig-supported), optionally by category. */
+export function getAvailableItems(category?: ShopCategory): ShopItem[] {
+  return shopItems.filter(
+    item => isItemAvailable(item) && (!category || item.category === category),
+  );
 }
