@@ -20,6 +20,7 @@
 import { motion } from 'framer-motion';
 import type { TargetAndTransition } from 'framer-motion';
 import { idle, bodyScale, floretSquish, BODY_SCALEX_GAIN } from './motions';
+import SproutyHat, { HAT_ANCHORS, type RigHatId } from './SproutyHat';
 
 export type SproutyExpression =
   | 'happy'
@@ -35,6 +36,8 @@ interface SproutyRigProps {
   size?: number;
   scale?: number;
   inflated?: number; // 0–100
+  /** Equipped hat id (e.g. 'hat-cowboy'). Only rig-native hats draw here. */
+  hat?: string | null;
   className?: string;
 }
 
@@ -119,6 +122,7 @@ export default function SproutyRig({
   size = 120,
   scale = 1,
   inflated = 0,
+  hat = null,
   className = '',
 }: SproutyRigProps) {
   const face = getFace(expression);
@@ -168,6 +172,21 @@ export default function SproutyRig({
   const faceLift = t * 6;
   // Floret rides up off the swelling body.
   const floretLift = t * 8;
+
+  // HAT motion (rig-native cosmetics). The hat is a SIBLING of the floret group
+  // (not a child) so it does NOT inherit the floret's squish — we want the head
+  // to squash but the hat to keep its shape, just riding/tilting/widening a bit.
+  //   • lift: matches the floret's lift + a touch extra so the brim clears the
+  //     crown as the body rounds and pushes the head up.
+  //   • scaleX: brim widens GENTLY with the head (much less than the floret's
+  //     0.22 gain) so it grows believably without distorting.
+  //   • tilt: a few degrees of jaunty lean that grows with inflation, selling
+  //     "perched on a straining balloon."
+  const hatLift = floretLift + t * 6;
+  const hatScaleX = 1 + t * 0.12;
+  const hatScaleY = 1 + t * 0.05;
+  const hatTilt = t * 6; // degrees
+  const rigHat = hat && hat in HAT_ANCHORS ? (hat as RigHatId) : null;
 
   // Pressure tremble — there is NO shake at all for the first stretch of
   // inflation (Sprouty just grows, calm and happy). The tremble only begins
@@ -352,6 +371,27 @@ export default function SproutyRig({
             <circle cx="52" cy="24" r="6" fill={FLORET_LIGHT} opacity="0.55" />
             <circle cx="72" cy="28" r="4" fill={FLORET_LIGHT} opacity="0.45" />
           </motion.g>
+
+          {/* ══ HAT (cosmetic) — SIBLING of the floret so it keeps its shape ══
+              Rides up + tilts + widens gently with inflation. Lives inside the
+              tremble/calm-bob group (it's the parent), so it shakes with the
+              body near max for free. Drawn AFTER the floret so it sits on top of
+              the crown. */}
+          {rigHat && (
+            <motion.g
+              style={{ transformBox: 'fill-box', transformOrigin: 'center bottom' }}
+              animate={
+                inflating
+                  ? { y: -hatLift, scaleX: hatScaleX, scaleY: hatScaleY, rotate: hatTilt }
+                  : idle.floret /* gentle bob/wobble in lockstep with the head at rest */
+              }
+              transition={inflating ? { type: 'spring', stiffness: 200, damping: 13 } : undefined}
+            >
+              <g transform={`translate(${HAT_ANCHORS[rigHat].x - 60}, ${HAT_ANCHORS[rigHat].y})`}>
+                <SproutyHat hatId={rigHat} t={t} />
+              </g>
+            </motion.g>
+          )}
 
         {/* ══ FACE (front-most) — rides up with the swelling body ══
             Drawn outside the stalk's scale group so it doesn't distort. */}

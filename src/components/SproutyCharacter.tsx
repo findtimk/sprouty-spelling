@@ -1,5 +1,6 @@
 import { motion, type TargetAndTransition } from 'framer-motion';
 import SproutyRig from './sprouty/SproutyRig';
+import { RIG_HATS } from './sprouty/SproutyHat';
 
 export type SproutyExpression = 'happy' | 'excited' | 'worried' | 'determined' | 'celebrating' | 'dizzy' | 'hurt';
 
@@ -123,14 +124,23 @@ export default function SproutyCharacter({
   // that's a later phase), so we fall back to the legacy procedural SVG below
   // ONLY when something is equipped. This keeps the shop's purchased items
   // visible until they're rebuilt on the rig.
-  const hasCosmetic = !!(equipped?.hat || equipped?.skin || equipped?.accessory || equipped?.dance);
-  if (!hasCosmetic) {
+  // The rig now natively draws a small set of hats (RIG_HATS). When one of
+  // those is equipped, the rig WINS — even if a skin/accessory/dance is also
+  // equipped — so we never downgrade the good growth animation to the legacy
+  // body. (Those other cosmetics simply don't show on the rig yet; that's the
+  // next slice of P3.) For all OTHER cosmetics, fall back to the legacy SVG.
+  const rigHat = equipped?.hat && RIG_HATS.has(equipped.hat) ? equipped.hat : null;
+  const hasLegacyCosmetic = !!(
+    (equipped?.hat && !rigHat) || equipped?.skin || equipped?.accessory || equipped?.dance
+  );
+  if (rigHat || !hasLegacyCosmetic) {
     return (
       <SproutyRig
         expression={expression}
         size={size}
         scale={scale}
         inflated={inflated}
+        hat={rigHat}
         className={className}
       />
     );

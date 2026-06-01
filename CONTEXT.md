@@ -86,7 +86,21 @@ We started replacing the dull procedural broccoli with a **layered SVG rig** (`s
 - **P4 — real explosion/effect art.** Swap coded `ConfettiPop` for pre-rendered sprite-sheet/Lottie frames (the user flagged this). `ConfettiPop` is the single swap point.
 - **P5 — dances as rig motions** + delete `BrainCharacter.tsx` and dead SVG/shop code.
 
-**How to continue:** `npm run dev` → `/#sandbox` for the rig inspector (poses, inflation slider, finale burst). Play the first level (growth mode) for the live finale. All rig code lives in `src/components/sprouty/`. The plan file for this work: `~/.claude/plans/let-s-work-on-the-luminous-cloud.md`.
+**How to continue:** `npm run dev` → `/#sandbox` for the rig inspector (poses, inflation slider, **hat selector**, finale burst). Play the first level (growth mode) for the live finale. All rig code lives in `src/components/sprouty/`. The plan file for this work: `~/.claude/plans/let-s-work-on-the-luminous-cloud.md`.
+
+### P3 STARTED — cosmetics on the rig (hats): Cowboy Hat live, Space Helmet next
+
+First cosmetic now renders on the rig (not the old fallback): the **Cowboy Hat** (`hat-cowboy`).
+
+- **`SproutyHat.tsx`** (new, in `src/components/sprouty/`) draws hats as parameterized SVG in the rig's coordinate space. It exports `RIG_HATS` (the set of rig-native hat ids — the single source of truth for routing) and `HAT_ANCHORS` (per-hat resting offset, the tuning knob).
+- **The rig** (`SproutyRig.tsx`) takes a `hat` prop and renders the hat as a SIBLING of the floret group (so it keeps its shape rather than inheriting the floret's squish). It rides the inflation: lifts with the floret + a touch extra, tilts a few degrees, and widens gently — and it lives inside the tremble group so it shakes near max for free.
+- **Routing** (`SproutyCharacter.tsx`): if a hat ∈ `RIG_HATS` is equipped, the **rig wins** — even with a skin/accessory also equipped — so we never downgrade to the old weak-inflation body. Other (non-rig) cosmetics still use the legacy fallback. Adding a hat to the rig = build its SVG + add its id to `RIG_HATS`.
+- **Finale** (`LevelComplete.tsx` `GrowthExplosion`): the hat stays on through windup/spinup/freeze, then at the POP it **launches up + spins + fades** with the confetti.
+- **Shop/buy/equip/remove were already fully built** — no changes needed there.
+
+**Next: Space Helmet (`hat-space`).** The hard part is *containment* — the helmet ENCLOSES the floret, so its shell must scale with the floret as the body balloons (or the broccoli bulges through the glass). Deferred deliberately; cowboy hat (on-top) proved the machinery first. `HAT_ANCHORS['hat-space']` is reserved; add the helmet SVG to `SproutyHat.tsx` and `'hat-space'` to `RIG_HATS` when ready.
+
+**Still TODO for hats:** the rig draws no skins/accessories/dances yet, so equipping a rig-hat + a skin shows the hat but not the skin (acceptable for now). The other 6 hats still use the legacy fallback.
 
 ### Game modes — down to one (deliberately, 2026-05-31)
 

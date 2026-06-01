@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
 import SproutyRig from '../components/sprouty/SproutyRig';
+import SproutyHat, { RIG_HATS } from '../components/sprouty/SproutyHat';
 import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
@@ -52,8 +53,9 @@ function getModeMessage(mode: GameMode, villainName?: string): { title: string; 
  *   4. POP      — instant cut to a big floret-confetti burst + "POP!", a white
  *                 screen-flash and a quick screen shake. Then done.
  */
-function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => void }) {
+function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: () => void; hat?: string | null }) {
   const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
+  const rigHat = hat && RIG_HATS.has(hat) ? hat : null;
   const doneRef = useRef(false);
   const popRef = useRef(false);
 
@@ -84,7 +86,7 @@ function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => 
             transition={{ duration: 0.55, ease: 'easeIn' }}
             style={{ transformOrigin: 'center bottom' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
           </motion.div>
         )}
 
@@ -101,7 +103,7 @@ function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => 
             transition={{ duration: 1.2, times: [0, 0.35, 0.6, 0.82, 1], ease: 'easeIn' }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
           </motion.div>
         )}
 
@@ -113,7 +115,7 @@ function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => 
             transition={{ duration: 0.15 }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
           </motion.div>
         )}
 
@@ -122,6 +124,23 @@ function GrowthExplosion({ onDone, onPop }: { onDone: () => void; onPop?: () => 
             <div className="absolute inset-0 flex items-center justify-center">
               <ConfettiPop size={280} intensity={1.8} />
             </div>
+            {/* HAT POP-OFF — when Sprouty bursts, his hat launches up, spins,
+                and fades out with the confetti. A fun little "where'd it go?"
+                beat that makes the cosmetic part of the payoff. */}
+            {rigHat && (
+              <motion.div
+                className="absolute"
+                style={{ left: '50%', top: '12%', transform: 'translateX(-50%)' }}
+                initial={{ y: 0, rotate: 0, opacity: 1, scale: 1.4 }}
+                animate={{ y: -120, rotate: 480, opacity: [1, 1, 0], scale: 1.5 }}
+                transition={{ duration: 0.85, ease: 'easeOut', times: [0, 0.7, 1] }}
+              >
+                {/* viewBox spans the TALL crown (~y-22) down past the brim (~y45) */}
+                <svg viewBox="9 -28 102 95" width={130} height={105} overflow="visible">
+                  <SproutyHat hatId={rigHat} t={1} />
+                </svg>
+              </motion.div>
+            )}
             {/* bouncy POP! text */}
             <motion.div
               className="absolute"
@@ -216,6 +235,7 @@ export default function LevelComplete({
           <GrowthExplosion
             onDone={() => setExplosionDone(true)}
             onPop={() => { setPopFx(true); setTimeout(() => setPopFx(false), 400); }}
+            hat={equipped?.hat}
           />
         )}
         {mode === 'battle' && (

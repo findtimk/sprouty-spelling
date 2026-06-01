@@ -66,9 +66,16 @@ const EXPRESSIONS: SproutyExpression[] = [
   'hurt',
 ];
 
+const HATS: { id: string | null; label: string }[] = [
+  { id: null, label: 'None' },
+  { id: 'hat-cowboy', label: '🤠 Cowboy' },
+  { id: 'hat-space', label: '🪖 Space (WIP)' },
+];
+
 export default function SproutySandbox() {
   const [inflated, setInflated] = useState(0);
   const [expression, setExpression] = useState<SproutyExpression>('happy');
+  const [hat, setHat] = useState<string | null>(null);
 
   return (
     <div className="min-h-dvh p-6 font-body" style={{ background: '#f0fdf4' }}>
@@ -86,7 +93,7 @@ export default function SproutySandbox() {
             className="flex items-end justify-center rounded-xl"
             style={{ width: 240, height: 240, background: '#ecfdf5' }}
           >
-            <SproutyRig expression={expression} inflated={inflated} size={180} />
+            <SproutyRig expression={expression} inflated={inflated} hat={hat} size={180} />
           </div>
 
           <div className="flex-1 w-full">
@@ -117,6 +124,25 @@ export default function SproutySandbox() {
                   }`}
                 >
                   {exp}
+                </button>
+              ))}
+            </div>
+
+            <label className="block text-sm font-bold text-green-800 mb-2 mt-4">
+              Hat
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {HATS.map((h) => (
+                <button
+                  key={h.label}
+                  onClick={() => setHat(h.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition ${
+                    hat === h.id
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {h.label}
                 </button>
               ))}
             </div>
@@ -182,6 +208,7 @@ export default function SproutySandbox() {
               <SproutyRig
                 expression={pct >= 90 ? 'hurt' : pct >= 76 ? 'dizzy' : pct >= 58 ? 'worried' : pct >= 40 ? 'determined' : pct >= 20 ? 'excited' : 'happy'}
                 inflated={pct}
+                hat={hat}
                 size={100}
               />
             </div>
