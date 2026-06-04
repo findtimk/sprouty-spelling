@@ -13,9 +13,11 @@ interface ShopProps {
   onBack: () => void;
 }
 
+// Ordered cheapest → priciest: accessories (10⭐, starter tier) first, then hats
+// (25⭐), then dances (30⭐) and skins (40⭐).
 const categories: { id: ShopCategory; label: string; icon: string }[] = [
-  { id: 'hat', label: 'Hats', icon: '🎩' },
   { id: 'accessory', label: 'Accessories', icon: '😎' },
+  { id: 'hat', label: 'Hats', icon: '🎩' },
   { id: 'skin', label: 'Skins', icon: '🎨' },
   { id: 'dance', label: 'Dances', icon: '💃' },
 ];

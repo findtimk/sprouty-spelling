@@ -13,23 +13,26 @@ export interface ShopItem {
 }
 
 export const shopItems: ShopItem[] = [
-  // Hats (10 stars)
-  { id: 'hat-chef', name: 'Chef Hat', category: 'hat', cost: 10, emoji: '👨‍🍳', description: 'Cook up some words!' },
-  { id: 'hat-crown', name: 'Royal Crown', category: 'hat', cost: 10, emoji: '👑', description: 'Spelling royalty!' },
-  { id: 'hat-pirate', name: 'Pirate Hat', category: 'hat', cost: 10, emoji: '🏴‍☠️', description: 'Arrr, spell that!' },
-  { id: 'hat-space', name: 'Space Helmet', category: 'hat', cost: 10, emoji: '🪖', description: 'To infinity!' },
-  { id: 'hat-cowboy', name: 'Cowboy Hat', category: 'hat', cost: 10, emoji: '🤠', description: 'Yeehaw, partner!' },
-  { id: 'hat-wizard', name: 'Wizard Hat', category: 'hat', cost: 10, emoji: '🧙', description: 'Hocus pocus spell!' },
-  { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 10, emoji: '🎉', description: "Let's celebrate!" },
-  { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 10, emoji: '🎩', description: 'Very distinguished!' },
+  // Accessories (10 stars — the STARTER tier). Small face/body add-ons, the
+  // cheapest items, since they're simpler than a full hat. Trimmed to the two
+  // we're prioritizing first — both are non-headwear (face + back) so they stack
+  // cleanly with hats. Expand later as we build more on the rig. (Removed: bowtie,
+  // wand, headphones, flowers, lightning, trophy — recoverable via git. Their
+  // legacy render blocks in SproutyCharacter.tsx are now inert and will be cleared
+  // in the broader old-art cleanup.)
+  { id: 'acc-sunglasses', name: 'Cool Shades', category: 'accessory', cost: 10, emoji: '😎', description: 'Too cool for school' },
+  { id: 'acc-cape', name: 'Super Cape', category: 'accessory', cost: 10, emoji: '🦸', description: 'Super speller!' },
 
-  // Accessories (25 stars). Trimmed to the two we're prioritizing first — both are
-  // non-headwear (face + back) so they stack cleanly with hats. Expand later as we
-  // build more on the rig. (Removed: bowtie, wand, headphones, flowers, lightning,
-  // trophy — recoverable via git. Their legacy render blocks in SproutyCharacter.tsx
-  // are now inert and will be cleared in the broader old-art cleanup.)
-  { id: 'acc-sunglasses', name: 'Cool Shades', category: 'accessory', cost: 25, emoji: '😎', description: 'Too cool for school' },
-  { id: 'acc-cape', name: 'Super Cape', category: 'accessory', cost: 25, emoji: '🦸', description: 'Super speller!' },
+  // Hats (25 stars). Bigger, more impressive than accessories (a whole astronaut
+  // helmet vs. a pair of shades), so they cost more.
+  { id: 'hat-chef', name: 'Chef Hat', category: 'hat', cost: 25, emoji: '👨‍🍳', description: 'Cook up some words!' },
+  { id: 'hat-crown', name: 'Royal Crown', category: 'hat', cost: 25, emoji: '👑', description: 'Spelling royalty!' },
+  { id: 'hat-pirate', name: 'Pirate Hat', category: 'hat', cost: 25, emoji: '🏴‍☠️', description: 'Arrr, spell that!' },
+  { id: 'hat-space', name: 'Space Helmet', category: 'hat', cost: 25, emoji: '🪖', description: 'To infinity!' },
+  { id: 'hat-cowboy', name: 'Cowboy Hat', category: 'hat', cost: 25, emoji: '🤠', description: 'Yeehaw, partner!' },
+  { id: 'hat-wizard', name: 'Wizard Hat', category: 'hat', cost: 25, emoji: '🧙', description: 'Hocus pocus spell!' },
+  { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 25, emoji: '🎉', description: "Let's celebrate!" },
+  { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 25, emoji: '🎩', description: 'Very distinguished!' },
 
   // Skins (40 stars)
   { id: 'skin-gold', name: 'Golden Sprouty', category: 'skin', cost: 40, emoji: '✨', description: 'Pure gold!' },
