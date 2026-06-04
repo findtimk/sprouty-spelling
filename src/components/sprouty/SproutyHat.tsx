@@ -54,7 +54,7 @@ export const HAT_MOTION: Record<RigHatId, HatMotionProfile> = {
   // floret's hard squish (that would drag the port off the face). Grows from its
   // CENTER so it stays concentric. No tilt. Falls back + bounces in the finale.
   'hat-space': {
-    ride: (t) => ({ scaleX: 1 + t * 0.14, scaleY: 1 + t * 0.04, y: -(t * 7), rotate: 0 }),
+    ride: (t) => ({ scaleX: 1 + t * 0.16, scaleY: 1 + t * 0.06, y: -(t * 7.5), rotate: 0 }),
     origin: 'center',
     landsAfterPop: true,
   },
@@ -188,6 +188,7 @@ const POD = '#A99CE0';          // lavender side pods
 const POD_DARK = '#8B7DD0';     // pod shading
 const POD_ACCENT = '#3FB6A8';   // teal accent dot on the pods
 const ANTENNA = '#8B7DD0';
+const GLASS = '#BFE6F2';        // soft blue glass tint over the visor (low opacity)
 
 /**
  * SPACE HELMET — a chunky cartoon astronaut helmet with a SOLID creamy-white
@@ -213,42 +214,53 @@ const ANTENNA = '#8B7DD0';
  *   4. (rig then draws the face, crisp, in the visor).
  */
 function SpaceHelmet() {
-  // Visor geometry — the opening the FACE + lower florets show through. Centered
-  // on the face (y~71), tall enough to frame the eyes (y72) past the mouth (y85)
-  // and reach up to the lower crown (~y50); wide enough to clear the cheeks.
+  // Visor geometry — a TALL rounded-rectangle "fishbowl glass" that encloses the
+  // WHOLE head: florets (crown ~y8) at the top, face (eyes y72, mouth y85) below,
+  // with clearance all around. Centered higher than before (over the head, not
+  // just the face) and much taller, matching the Option 3 reference.
   const PORT_CX = 60;
-  const PORT_CY = 71;
-  const PORT_RX = 26;
-  const PORT_RY = 21;
+  const PORT_CY = 56;   // centered over the head (between crown and face)
+  const PORT_RX = 31;   // wide enough to clear florets + cheeks with airspace
+  const PORT_RY = 37;   // tall enough to enclose crown→mouth with clearance
+  const PORT_R = 18;    // corner radius — soft rounded-rectangle, not an ellipse
   // SOLID shell silhouette WITH fused side-lobe pods — one continuous path so the
-  // single outline flows from dome into each pod with no doubled seam: top dome →
-  // right side → bulge OUT into the right pod lobe → chin → left side → left lobe.
-  const SHELL_PATH = `M 60,4
-                      Q 94,4 105,30
-                      Q 110,46 106,60
-                      Q 116,60 117,72
-                      Q 117,85 105,84
-                      Q 101,90 92,91
-                      Q 80,95 60,95
-                      Q 40,95 28,91
-                      Q 19,90 15,84
-                      Q 3,85 3,72
-                      Q 4,60 14,60
-                      Q 10,46 15,30
-                      Q 26,4 60,4 Z`;
-  const VISOR_HOLE = `M ${PORT_CX},${PORT_CY - PORT_RY}
-                      a ${PORT_RX},${PORT_RY} 0 1,0 0,${PORT_RY * 2}
-                      a ${PORT_RX},${PORT_RY} 0 1,0 0,${-PORT_RY * 2} Z`;
+  // single outline flows from dome into each pod with no doubled seam. Raised +
+  // widened to give the glass airspace around the head: top dome → right side →
+  // bulge OUT into the right pod lobe → chin → left side → left lobe.
+  const SHELL_PATH = `M 60,-2
+                      Q 98,-2 109,28
+                      Q 114,46 109,62
+                      Q 119,62 120,74
+                      Q 120,88 108,87
+                      Q 103,93 93,94
+                      Q 80,98 60,98
+                      Q 40,98 27,94
+                      Q 17,93 12,87
+                      Q 0,88 0,74
+                      Q 1,62 11,62
+                      Q 6,46 11,28
+                      Q 22,-2 60,-2 Z`;
+  // rounded-rectangle visor hole (punched out via evenodd). Drawn clockwise so it
+  // reverses winding against the shell and cuts a hole.
+  const x0 = PORT_CX - PORT_RX, x1 = PORT_CX + PORT_RX;
+  const y0 = PORT_CY - PORT_RY, y1 = PORT_CY + PORT_RY;
+  const VISOR_HOLE = `M ${x0 + PORT_R},${y0}
+                      L ${x1 - PORT_R},${y0} Q ${x1},${y0} ${x1},${y0 + PORT_R}
+                      L ${x1},${y1 - PORT_R} Q ${x1},${y1} ${x1 - PORT_R},${y1}
+                      L ${x0 + PORT_R},${y1} Q ${x0},${y1} ${x0},${y1 - PORT_R}
+                      L ${x0},${y0 + PORT_R} Q ${x0},${y0} ${x0 + PORT_R},${y0} Z`;
+  // shared rounded-rect path for the glass tint + rim (same geometry as the hole)
+  const VISOR_RECT = VISOR_HOLE;
   return (
     <g>
-      {/* ── ANTENNA ── thin stalk + knob on top of the dome */}
-      <line x1="60" y1="4" x2="60" y2="-8" stroke={HELMET_OUTLINE} strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="60" cy="-11" r="3.4" fill={ANTENNA} stroke={HELMET_OUTLINE} strokeWidth="2" />
+      {/* ── FINIAL ── short stout stalk + chunky knob on top of the dome */}
+      <line x1="60" y1="-2" x2="60" y2="-12" stroke={HELMET_OUTLINE} strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="60" cy="-15" r="4.5" fill={ANTENNA} stroke={HELMET_OUTLINE} strokeWidth="2.5" />
 
       {/* pod lavender peeking out beyond the shell lobe edge (drawn under the
           shell so the shell's outline is the only edge at the seam) */}
-      <ellipse cx="9" cy="72" rx="7.5" ry="11" fill={POD} />
-      <ellipse cx="111" cy="72" rx="7.5" ry="11" fill={POD} />
+      <ellipse cx="6" cy="74" rx="9" ry="13" fill={POD} />
+      <ellipse cx="114" cy="74" rx="9" ry="13" fill={POD} />
 
       {/* ── SOLID SHELL ── opaque white, one teal outline, with the visor punched
           out (evenodd) and the pod lobes fused into the silhouette. */}
@@ -261,26 +273,42 @@ function SpaceHelmet() {
         strokeLinejoin="round"
       />
 
+      {/* ── GLASS ── translucent tint filling the visor so it reads as glass, not
+          a hole. Drawn over the (transparent) opening; the green florets show
+          through it, and the rig paints the FACE on top of all this afterward so
+          eyes/mouth stay crisp and bright. */}
+      <path d={VISOR_RECT} fill={GLASS} opacity="0.18" />
+      {/* highlight sweep — a soft white diagonal streak across the upper-left
+          glass, the classic "shine" cue. */}
+      <path
+        d={`M ${x0 + 6},${y0 + 16} Q ${x0 + 14},${y0 + 4} ${x0 + 28},${y0 + 5}`}
+        fill="none"
+        stroke="#FFFFFF"
+        strokeWidth="6"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+
       {/* pod lavender fill INSIDE each lobe (over the shell fill) + accent dot —
           bounded by the shell outline, so no separate pod outline shows */}
-      <path d="M 14,60 Q 4,60 3,72 Q 3,85 15,84 Q 12,74 14,60 Z" fill={POD} />
-      <circle cx="8" cy="72" r="3.2" fill={POD_ACCENT} />
-      <path d="M 106,60 Q 116,60 117,72 Q 117,85 105,84 Q 108,74 106,60 Z" fill={POD} />
-      <circle cx="112" cy="72" r="3.2" fill={POD_ACCENT} />
+      <path d="M 11,60 Q 0,61 0,74 Q 0,88 13,87 Q 9,75 11,60 Z" fill={POD} />
+      <circle cx="6" cy="74" r="3.6" fill={POD_ACCENT} />
+      <path d="M 109,60 Q 120,61 120,74 Q 120,88 107,87 Q 111,75 109,60 Z" fill={POD} />
+      <circle cx="114" cy="74" r="3.6" fill={POD_ACCENT} />
 
       {/* molded-shell highlight (upper-left) + soft shade (right) */}
-      <path d="M 32,14 Q 19,26 19,46" fill="none" stroke={SHELL_HI} strokeWidth="5" strokeLinecap="round" opacity="0.85" />
-      <path d="M 100,30 Q 106,44 102,58" fill="none" stroke={SHELL_SHADE} strokeWidth="4" strokeLinecap="round" opacity="0.7" />
+      <path d="M 30,10 Q 16,24 16,46" fill="none" stroke={SHELL_HI} strokeWidth="5" strokeLinecap="round" opacity="0.85" />
+      <path d="M 104,26 Q 110,42 105,60" fill="none" stroke={SHELL_SHADE} strokeWidth="4" strokeLinecap="round" opacity="0.7" />
 
-      {/* visor rim — a clean teal ring framing the opening */}
-      <ellipse cx={PORT_CX} cy={PORT_CY} rx={PORT_RX} ry={PORT_RY} fill="none" stroke={HELMET_OUTLINE} strokeWidth="3" />
+      {/* visor rim — a clean teal frame around the rounded-rectangle opening */}
+      <path d={VISOR_RECT} fill="none" stroke={HELMET_OUTLINE} strokeWidth="3" strokeLinejoin="round" />
 
       {/* ── COLLAR ── white neck ring BELOW the chin, with a lavender band + lights */}
-      <rect x="34" y="92" width="52" height="11" rx="5.5" fill={SHELL} stroke={HELMET_OUTLINE} strokeWidth="2.5" />
-      <rect x="38" y="95" width="44" height="4" rx="2" fill={POD} opacity="0.85" />
-      <circle cx="47" cy="97" r="1.7" fill={POD_DARK} />
-      <circle cx="60" cy="97" r="1.7" fill={POD_ACCENT} />
-      <circle cx="73" cy="97" r="1.7" fill={POD_DARK} />
+      <rect x="33" y="95" width="54" height="11" rx="5.5" fill={SHELL} stroke={HELMET_OUTLINE} strokeWidth="2.5" />
+      <rect x="37" y="98" width="46" height="4" rx="2" fill={POD} opacity="0.85" />
+      <circle cx="47" cy="100" r="1.7" fill={POD_DARK} />
+      <circle cx="60" cy="100" r="1.7" fill={POD_ACCENT} />
+      <circle cx="73" cy="100" r="1.7" fill={POD_DARK} />
     </g>
   );
 }
