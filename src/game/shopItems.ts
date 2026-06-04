@@ -1,4 +1,5 @@
 import { RIG_HATS } from '../components/sprouty/SproutyHat';
+import { RIG_ACCESSORIES } from '../components/sprouty/SproutyAccessory';
 
 export type ShopCategory = 'hat' | 'accessory' | 'skin' | 'dance';
 
@@ -22,15 +23,13 @@ export const shopItems: ShopItem[] = [
   { id: 'hat-party', name: 'Party Hat', category: 'hat', cost: 10, emoji: '🎉', description: "Let's celebrate!" },
   { id: 'hat-tophat', name: 'Top Hat', category: 'hat', cost: 10, emoji: '🎩', description: 'Very distinguished!' },
 
-  // Accessories (25 stars)
+  // Accessories (25 stars). Trimmed to the two we're prioritizing first — both are
+  // non-headwear (face + back) so they stack cleanly with hats. Expand later as we
+  // build more on the rig. (Removed: bowtie, wand, headphones, flowers, lightning,
+  // trophy — recoverable via git. Their legacy render blocks in SproutyCharacter.tsx
+  // are now inert and will be cleared in the broader old-art cleanup.)
   { id: 'acc-sunglasses', name: 'Cool Shades', category: 'accessory', cost: 25, emoji: '😎', description: 'Too cool for school' },
   { id: 'acc-cape', name: 'Super Cape', category: 'accessory', cost: 25, emoji: '🦸', description: 'Super speller!' },
-  { id: 'acc-bowtie', name: 'Fancy Bowtie', category: 'accessory', cost: 25, emoji: '🎀', description: 'Looking sharp!' },
-  { id: 'acc-wand', name: 'Magic Wand', category: 'accessory', cost: 25, emoji: '🪄', description: 'Spell-casting!' },
-  { id: 'acc-headphones', name: 'Headphones', category: 'accessory', cost: 25, emoji: '🎧', description: 'Beats while you spell!' },
-  { id: 'acc-flowers', name: 'Flower Crown', category: 'accessory', cost: 25, emoji: '🌸', description: "Bloomin' brilliant!" },
-  { id: 'acc-lightning', name: 'Lightning Bolt', category: 'accessory', cost: 25, emoji: '⚡', description: 'Electrifying speller!' },
-  { id: 'acc-trophy', name: 'Trophy', category: 'accessory', cost: 25, emoji: '🏆', description: 'Champion speller!' },
 
   // Skins (40 stars)
   { id: 'skin-gold', name: 'Golden Sprouty', category: 'skin', cost: 40, emoji: '✨', description: 'Pure gold!' },
@@ -64,10 +63,12 @@ export function getItemsByCategory(category: ShopCategory): ShopItem[] {
  *
  * Expand this as cosmetics get rebuilt on the rig:
  *   • hats — gated by RIG_HATS (cowboy, space today; the single source of truth).
- *   • accessory / skin / dance — none on the rig yet → all hidden for now.
+ *   • accessories — gated by RIG_ACCESSORIES (star shades today).
+ *   • skin / dance — none on the rig yet → all hidden for now.
  */
 export function isItemAvailable(item: ShopItem): boolean {
   if (item.category === 'hat') return RIG_HATS.has(item.id);
+  if (item.category === 'accessory') return RIG_ACCESSORIES.has(item.id);
   return false;
 }
 

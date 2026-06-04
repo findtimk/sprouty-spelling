@@ -133,7 +133,92 @@ We **dialed back to a single playable mode: Super Sprout (growth).** Battle, Roc
 
 ---
 
-## Open problems & ideas to explore
+## Shop categories & pricing
+
+The shop is the macro-loop incentive: spell → stars → spend. Cosmetics are priced by
+**how much of Sprouty/the experience the item changes** — the bigger the effect, the more
+stars. This is the deliberate pricing ladder, and the direction is to keep extending it
+upward: **new categories cost more and have more drastic / "cool" effects.**
+
+### Current categories (in `src/game/shopItems.ts`)
+
+| Category | Price | # items | What it changes | Live on the new rig? |
+|---|---|---|---|---|
+| **Hats** | 10⭐ | 8 | Headwear | ✅ only cowboy + space; other 6 hidden |
+| **Accessories** | 25⭐ | 2 | Non-headwear add-ons (shades, cape) | ❌ hidden until rebuilt on rig |
+| **Dances** | 30⭐ | 7 | Victory move at level end | ❌ hidden (still old art) |
+| **Skins** | 40⭐ | 8 | Recolor + whole-body effects | ❌ hidden (still old art) |
+
+**Critical caveat:** the *catalog* has 4 categories, but the *shop a kid actually sees*
+is effectively **Hats only**. Since the rig overhaul, `isItemAvailable()` gates out any
+cosmetic not rebuilt on the rig (accessories/skins/dances would revert Sprouty to the old
+art), and `Shop.tsx` hides empty category tabs. Re-opening those categories depends on P3
+(cosmetics on the rig).
+
+### Pricing logic (the ladder)
+
+Cost tracks **scope of impact**:
+- **Looks** — changes how Sprouty *looks* → hats / accessories / skins (10–40⭐).
+- **Moves** — changes how Sprouty *moves* → dances (30⭐).
+- **The big moments** — changes the world / payoff moments *around* Sprouty → the new,
+  premium frontier (60⭐+). This is where the most exciting (and most expensive) rewards
+  should live, because "the animations *are* the game" and the finale is the flagship.
+
+### Accessories — redesigned lineup (decided this session)
+
+We did a full rethink of the accessory list and **trimmed the catalog to the two we'll
+prioritize first**, same "make a few great, expand later" approach as hats (cowboy +
+space) and explosions (Fireworks only). Both kept items are deliberately **non-headwear**
+(face + back slots) so they stack cleanly with an equipped hat — overlap with the *hats*
+category was the main flaw in the old list.
+
+- **Kept (the lineup, flat 25⭐):** 😎 **Cool Shades** (`acc-sunglasses`, face) · 🦸
+  **Super Cape** (`acc-cape`, back).
+- **Removed from the catalog** (`shopItems.ts`; recoverable via git): 🎀 Fancy Bowtie, 🪄
+  Magic Wand, 🎧 Headphones, 🌸 Flower Crown, ⚡ Lightning Bolt, 🏆 Trophy. Reasons:
+  Flower Crown / Headphones are head-worn (overlap hats); Lightning Bolt is too vague to
+  render as a wearable; Trophy reads as an *achievement*, not a worn item (save for a
+  future achievements system, not the shop). Bowtie/Wand are fine ideas, just deferred to
+  keep the first build small.
+- **Star Buddy** (a floating companion) was considered but **moved to the future Pets
+  category** (~80⭐) — companions are their own premium idea, not accessories.
+- **Status:** catalog-only change. Like the other non-hat cosmetics, accessories are still
+  **hidden** (`isItemAvailable` returns false for them) until they're rebuilt on the rig
+  (P3). Shades + Cape are the two to build first. NOTE: their **legacy render blocks in
+  `SproutyCharacter.tsx` for the 6 removed ids are now inert** (the branches can't match)
+  — clean them up in the broader old-art retirement, not piecemeal.
+
+### PLANNED next category — Explosion FX (designed, NOT built yet)
+
+Agreed direction (user, this session): add a premium **Explosion FX** category that
+re-skins the **growth-mode finale burst** — the game's single biggest payoff moment.
+
+- **First item: Fireworks 🎆 (~70⭐).** Start with ONE effect and make it spectacular to
+  prove the category + set the quality bar, before mass-producing #2–5. The **default
+  confetti POP stays free**; Fireworks is a buyable upgrade.
+- **Why this category first:** (1) it owns the flagship moment; (2) `ConfettiPop.tsx` is
+  already the *single swap point* for the finale, so the build is contained; (3)
+  explosions are **rig-independent** (they fire at the finale regardless of how Sprouty
+  looks), so unlike accessories/skins/dances this category ships **fully working** — the
+  first complete new category since the rig overhaul.
+- **Open pricing question:** 70⭐ makes it clearly the top tier (vs. skins at 40⭐), but
+  may be steep relative to how fast kids earn stars — worth a playtest of the star
+  economy (ties into "Difficulty-based star multipliers" below).
+- **The "end-of-level only" tension:** an explosion is only seen at a level's finale, so a
+  single owned effect feels less "always-on" than a hat. This is part of why
+  **Backgrounds** (always visible) is a strong *second* premium category.
+- **Build plan filed at:** `~/.claude/plans/let-s-work-on-the-compiled-owl.md` (files to
+  touch: `shopItems.ts`, `App.tsx` equip slot, `Shop.tsx` tab, new `Fireworks.tsx`,
+  `LevelComplete.tsx` finale routing, and this doc).
+
+### Other candidate new categories (brainstormed, parked)
+
+- **Backgrounds (~50⭐)** — swap the play-screen backdrop (space, underwater, jungle,
+  candy land). Always on-screen → high perceived value; good second premium category.
+- **Reaction FX (~40⭐)** — themed per-word celebration in the *micro* loop (sparkles,
+  hearts, mini-fireworks). Seen constantly, motivates mid-level.
+- **Pets / Sidekicks (~80⭐)** — a companion that floats beside Sprouty and reacts.
+  Highest cool-factor + highest cost, but the most new art/animation work.
 
 ### 1. Difficulty-based star multipliers
 Easy levels currently give the same stars as hard ones. Kids are rational — they'll grind easy. Options to consider:

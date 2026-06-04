@@ -21,6 +21,7 @@ import { motion } from 'framer-motion';
 import type { TargetAndTransition } from 'framer-motion';
 import { idle, bodyScale, floretSquish, BODY_SCALEX_GAIN } from './motions';
 import SproutyHat, { HAT_ANCHORS, HAT_MOTION, type RigHatId } from './SproutyHat';
+import SproutyAccessory, { RIG_ACCESSORIES, EYE_COVERING } from './SproutyAccessory';
 
 export type SproutyExpression =
   | 'happy'
@@ -38,6 +39,8 @@ interface SproutyRigProps {
   inflated?: number; // 0–100
   /** Equipped hat id (e.g. 'hat-cowboy'). Only rig-native hats draw here. */
   hat?: string | null;
+  /** Equipped accessory id (e.g. 'acc-sunglasses'). Only rig-native accessories draw here. */
+  accessory?: string | null;
   className?: string;
 }
 
@@ -123,9 +126,15 @@ export default function SproutyRig({
   scale = 1,
   inflated = 0,
   hat = null,
+  accessory = null,
   className = '',
 }: SproutyRigProps) {
   const face = getFace(expression);
+  // Rig-native accessory (vs. the legacy fallback). When it covers the eyes (e.g.
+  // star shades), the face hides its own eyes/eyebrows so the accessory replaces
+  // them rather than peeking through.
+  const rigAccessory = accessory && RIG_ACCESSORIES.has(accessory) ? accessory : null;
+  const hidesEyes = !!(rigAccessory && EYE_COVERING.has(rigAccessory));
   const t = Math.max(0, Math.min(1, inflated / 100));
   const inflating = inflated > 0;
 
@@ -366,11 +375,23 @@ export default function SproutyRig({
             <circle cx="72" cy="28" r="4" fill={FLORET_LIGHT} opacity="0.45" />
           </motion.g>
 
+          {/* ══ ACCESSORY (face-worn) — drawn BEFORE the hat so headwear sits on
+              top of it. This matters for the space helmet: the shades then render
+              INSIDE/behind the visor glass instead of poking past the frame, the
+              way you'd actually wear sunglasses under a helmet. It tracks the
+              face's lift (same translate as the FACE group below) so it stays on
+              the eye line as the body swells. */}
+          {rigAccessory && (
+            <g transform={`translate(0, ${-faceLift})`}>
+              <SproutyAccessory accessoryId={rigAccessory} />
+            </g>
+          )}
+
           {/* ══ HAT (cosmetic) — SIBLING of the floret so it keeps its shape ══
               Rides up + tilts + widens gently with inflation. Lives inside the
               tremble/calm-bob group (it's the parent), so it shakes with the
-              body near max for free. Drawn AFTER the floret so it sits on top of
-              the crown. */}
+              body near max for free. Drawn AFTER the floret (and the accessory)
+              so it sits on top of the crown. */}
           {rigHat && hatProfile && (
             <motion.g
               style={{ transformBox: 'fill-box', transformOrigin: hatProfile.origin }}
@@ -398,38 +419,43 @@ export default function SproutyRig({
             </>
           )}
 
-          {/* eyes */}
-          <ellipse cx="52" cy="72" rx="5" ry={eyeRy} fill="#1a1a1a" />
-          <ellipse cx="68" cy="72" rx="5" ry={eyeRy} fill="#1a1a1a" />
-          {face.pupil > 0 && (
+          {/* eyes — hidden when a face-covering accessory (e.g. star shades) is
+              equipped; the accessory draws over the eye line instead. */}
+          {!hidesEyes && (
             <>
-              {/* white highlights — what makes the eyes feel alive */}
-              <circle cx="53.5" cy={70} r={face.pupil * 0.5} fill="white" />
-              <circle cx="69.5" cy={70} r={face.pupil * 0.5} fill="white" />
-            </>
-          )}
-          {/* celebrating happy-squint overrides the round eyes */}
-          {expression === 'celebrating' && (
-            <>
-              {/* cover the round eyes with body color, then draw happy arcs */}
-              <rect x="45" y="66" width="12" height="10" fill={STALK} />
-              <rect x="63" y="66" width="12" height="10" fill={STALK} />
-              <path d="M 47,73 Q 52,69 57,73" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              <path d="M 63,73 Q 68,69 73,73" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-            </>
-          )}
+              <ellipse cx="52" cy="72" rx="5" ry={eyeRy} fill="#1a1a1a" />
+              <ellipse cx="68" cy="72" rx="5" ry={eyeRy} fill="#1a1a1a" />
+              {face.pupil > 0 && (
+                <>
+                  {/* white highlights — what makes the eyes feel alive */}
+                  <circle cx="53.5" cy={70} r={face.pupil * 0.5} fill="white" />
+                  <circle cx="69.5" cy={70} r={face.pupil * 0.5} fill="white" />
+                </>
+              )}
+              {/* celebrating happy-squint overrides the round eyes */}
+              {expression === 'celebrating' && (
+                <>
+                  {/* cover the round eyes with body color, then draw happy arcs */}
+                  <rect x="45" y="66" width="12" height="10" fill={STALK} />
+                  <rect x="63" y="66" width="12" height="10" fill={STALK} />
+                  <path d="M 47,73 Q 52,69 57,73" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <path d="M 63,73 Q 68,69 73,73" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </>
+              )}
 
-          {/* eyebrows for worried / determined */}
-          {expression === 'worried' && (
-            <>
-              <line x1="47" y1="62" x2="56" y2="64" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" />
-              <line x1="64" y1="64" x2="73" y2="62" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" />
-            </>
-          )}
-          {expression === 'determined' && (
-            <>
-              <line x1="47" y1="64" x2="56" y2="62" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="64" y1="62" x2="73" y2="64" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
+              {/* eyebrows for worried / determined */}
+              {expression === 'worried' && (
+                <>
+                  <line x1="47" y1="62" x2="56" y2="64" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="64" y1="64" x2="73" y2="62" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" />
+                </>
+              )}
+              {expression === 'determined' && (
+                <>
+                  <line x1="47" y1="64" x2="56" y2="62" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
+                  <line x1="64" y1="62" x2="73" y2="64" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
+                </>
+              )}
             </>
           )}
 

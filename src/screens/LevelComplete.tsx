@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
 import SproutyRig from '../components/sprouty/SproutyRig';
 import SproutyHat, { RIG_HATS, HAT_MOTION, type RigHatId } from '../components/sprouty/SproutyHat';
+import { RIG_ACCESSORIES } from '../components/sprouty/SproutyAccessory';
 import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
@@ -53,9 +54,10 @@ function getModeMessage(mode: GameMode, villainName?: string): { title: string; 
  *   4. POP      — instant cut to a big floret-confetti burst + "POP!", a white
  *                 screen-flash and a quick screen shake. Then done.
  */
-function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: () => void; hat?: string | null }) {
+function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void; onPop?: () => void; hat?: string | null; accessory?: string | null }) {
   const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
   const rigHat = hat && RIG_HATS.has(hat) ? hat : null;
+  const rigAccessory = accessory && RIG_ACCESSORIES.has(accessory) ? accessory : null;
   // Some hats (the space helmet) FALL BACK and bounce after popping off — that
   // landing beat takes longer, so we hold the pop subtree open until it lands.
   const lands = rigHat ? !!HAT_MOTION[rigHat as RigHatId]?.landsAfterPop : false;
@@ -91,7 +93,7 @@ function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: (
             transition={{ duration: 0.55, ease: 'easeIn' }}
             style={{ transformOrigin: 'center bottom' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
           </motion.div>
         )}
 
@@ -108,7 +110,7 @@ function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: (
             transition={{ duration: 1.2, times: [0, 0.35, 0.6, 0.82, 1], ease: 'easeIn' }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
           </motion.div>
         )}
 
@@ -120,7 +122,7 @@ function GrowthExplosion({ onDone, onPop, hat }: { onDone: () => void; onPop?: (
             transition={{ duration: 0.15 }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
           </motion.div>
         )}
 
@@ -274,6 +276,7 @@ export default function LevelComplete({
             onDone={() => setExplosionDone(true)}
             onPop={() => { setPopFx(true); setTimeout(() => setPopFx(false), 400); }}
             hat={equipped?.hat}
+            accessory={equipped?.accessory}
           />
         )}
         {mode === 'battle' && (

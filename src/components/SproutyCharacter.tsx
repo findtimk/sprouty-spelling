@@ -1,6 +1,7 @@
 import { motion, type TargetAndTransition } from 'framer-motion';
 import SproutyRig from './sprouty/SproutyRig';
 import { RIG_HATS } from './sprouty/SproutyHat';
+import { RIG_ACCESSORIES } from './sprouty/SproutyAccessory';
 
 export type SproutyExpression = 'happy' | 'excited' | 'worried' | 'determined' | 'celebrating' | 'dizzy' | 'hurt';
 
@@ -130,9 +131,18 @@ export default function SproutyCharacter({
   // body. (Those other cosmetics simply don't show on the rig yet; that's the
   // next slice of P3.) For all OTHER cosmetics, fall back to the legacy SVG.
   const rigHat = equipped?.hat && RIG_HATS.has(equipped.hat) ? equipped.hat : null;
+  const rigAccessory =
+    equipped?.accessory && RIG_ACCESSORIES.has(equipped.accessory) ? equipped.accessory : null;
+  // A cosmetic forces the legacy fallback only if it's NOT yet rebuilt on the rig.
   const hasLegacyCosmetic = !!(
-    (equipped?.hat && !rigHat) || equipped?.skin || equipped?.accessory || equipped?.dance
+    (equipped?.hat && !rigHat) ||
+    (equipped?.accessory && !rigAccessory) ||
+    equipped?.skin ||
+    equipped?.dance
   );
+  // Stay on the rig whenever every equipped cosmetic is rig-native (or nothing is
+  // equipped). A rig hat also wins even alongside a legacy skin/dance, to avoid
+  // downgrading the good growth animation — those just don't show on the rig yet.
   if (rigHat || !hasLegacyCosmetic) {
     return (
       <SproutyRig
@@ -141,6 +151,7 @@ export default function SproutyCharacter({
         scale={scale}
         inflated={inflated}
         hat={rigHat}
+        accessory={rigAccessory}
         className={className}
       />
     );

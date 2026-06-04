@@ -72,10 +72,16 @@ const HATS: { id: string | null; label: string }[] = [
   { id: 'hat-space', label: '🪖 Space' },
 ];
 
+const ACCESSORIES: { id: string | null; label: string }[] = [
+  { id: null, label: 'None' },
+  { id: 'acc-sunglasses', label: '😎 Star Shades' },
+];
+
 export default function SproutySandbox() {
   const [inflated, setInflated] = useState(0);
   const [expression, setExpression] = useState<SproutyExpression>('happy');
   const [hat, setHat] = useState<string | null>(null);
+  const [accessory, setAccessory] = useState<string | null>(null);
 
   return (
     <div className="min-h-dvh p-6 font-body" style={{ background: '#f0fdf4' }}>
@@ -93,7 +99,7 @@ export default function SproutySandbox() {
             className="flex items-end justify-center rounded-xl"
             style={{ width: 240, height: 240, background: '#ecfdf5' }}
           >
-            <SproutyRig expression={expression} inflated={inflated} hat={hat} size={180} />
+            <SproutyRig expression={expression} inflated={inflated} hat={hat} accessory={accessory} size={180} />
           </div>
 
           <div className="flex-1 w-full">
@@ -143,6 +149,25 @@ export default function SproutySandbox() {
                   }`}
                 >
                   {h.label}
+                </button>
+              ))}
+            </div>
+
+            <label className="block text-sm font-bold text-green-800 mb-2 mt-4">
+              Accessory
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ACCESSORIES.map((a) => (
+                <button
+                  key={a.label}
+                  onClick={() => setAccessory(a.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition ${
+                    accessory === a.id
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}
+                >
+                  {a.label}
                 </button>
               ))}
             </div>
@@ -201,15 +226,19 @@ export default function SproutySandbox() {
       {/* Steps chosen to land ON each emotional beat (20/40/58/76/90) so the
           full happy→excited→neutral→worried→dizzy→hurt arc is visible. Keep the
           expression thresholds in sync with getSproutyExpression() in GamePlay. */}
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-3 mb-8">
+      {/* Laid out 4-per-row (like the expressions grid above) so the 7 steps wrap
+          onto two rows — each cell gets plenty of horizontal room, so the inflated
+          broccoli (which grows ~2.15x wide at 100% with overflow:visible) reads
+          individually without spilling onto its neighbours. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[0, 25, 40, 50, 65, 80, 100].map((pct) => (
           <div key={pct} className="bg-white rounded-xl p-3 shadow flex flex-col items-center">
-            <div className="flex items-end justify-center" style={{ height: 160 }}>
+            <div className="flex items-end justify-center w-full" style={{ height: 140 }}>
               <SproutyRig
                 expression={pct >= 90 ? 'hurt' : pct >= 76 ? 'dizzy' : pct >= 58 ? 'worried' : pct >= 40 ? 'determined' : pct >= 20 ? 'excited' : 'happy'}
                 inflated={pct}
                 hat={hat}
-                size={100}
+                size={110}
               />
             </div>
             <span className="text-xs font-semibold text-green-700 mt-1">{pct}%</span>
