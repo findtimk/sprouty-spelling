@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SproutyCharacter from '../components/SproutyCharacter';
 import SproutyRig from '../components/sprouty/SproutyRig';
 import SproutyHat, { RIG_HATS, HAT_MOTION, type RigHatId } from '../components/sprouty/SproutyHat';
-import { RIG_ACCESSORIES } from '../components/sprouty/SproutyAccessory';
+import { RIG_ACCESSORIES, POP_OFF_ACCESSORIES, SproutyAccessoryPopOff } from '../components/sprouty/SproutyAccessory';
 import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
@@ -58,6 +58,7 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
   const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
   const rigHat = hat && RIG_HATS.has(hat) ? hat : null;
   const rigAccessory = accessory && RIG_ACCESSORIES.has(accessory) ? accessory : null;
+  const popOffAccessory = rigAccessory && POP_OFF_ACCESSORIES.has(rigAccessory) ? rigAccessory : null;
   // Some hats (the space helmet) FALL BACK and bounce after popping off — that
   // landing beat takes longer, so we hold the pop subtree open until it lands.
   const lands = rigHat ? !!HAT_MOTION[rigHat as RigHatId]?.landsAfterPop : false;
@@ -176,6 +177,36 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
                   </svg>
                 </motion.div>
               )
+            )}
+            {/* CAPE POP-OFF — when Sprouty bursts, the whole cape (drape + collar)
+                gets caught in the blast and WHOOSHES UP with the confetti,
+                tumbling and rippling like wind-caught fabric, drifting sideways,
+                then shrinking + fading into the sky. */}
+            {popOffAccessory && (
+              <motion.div
+                className="absolute"
+                style={{ left: '50%', top: '40%', x: '-50%', transformOrigin: 'center top' }}
+                initial={{ y: 0, x: '-50%', rotate: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
+                animate={{
+                  // launch up fast then ease as it sails into the sky
+                  y: [0, -70, -130, -180, -220],
+                  // drift sideways as it tumbles
+                  x: ['-50%', '-58%', '-44%', '-60%', '-52%'],
+                  // lively tumble
+                  rotate: [0, -28, 18, -40, -22],
+                  // ripple/flap: the fabric wobbles its width & height out of sync
+                  scaleX: [1, 1.18, 0.82, 1.12, 0.9],
+                  scaleY: [1, 0.86, 1.16, 0.9, 1.05],
+                  opacity: [1, 1, 1, 0.7, 0],
+                }}
+                transition={{ duration: 1.3, times: [0, 0.22, 0.5, 0.78, 1], ease: 'easeOut' }}
+              >
+                {/* viewBox frames the whole cape (drape x16..104 / collar y88 down
+                    to hem ~y124) with a little margin */}
+                <svg viewBox="12 80 96 50" width={150} height={78} overflow="visible">
+                  <SproutyAccessoryPopOff accessoryId={popOffAccessory} />
+                </svg>
+              </motion.div>
             )}
             {/* bouncy POP! text */}
             <motion.div

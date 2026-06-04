@@ -201,3 +201,25 @@ export default function SproutyAccessory({ accessoryId }: SproutyAccessoryProps)
   if (accessoryId === 'acc-cape') return <CapeCollar />;
   return null;
 }
+
+/** Accessories that get a POP-OFF beat in the growth finale (fly off when Sprouty
+ *  bursts, like the hats do). Only the cape today. */
+export const POP_OFF_ACCESSORIES = new Set<string>(['acc-cape']);
+
+/**
+ * The WHOLE accessory drawn as ONE unit for the finale pop-off (back drape +
+ * front collar/clasp together), so it can whoosh off as a single flying object.
+ * Drawn in the rig's coordinate space; the caller wraps it in a flying <motion.g>
+ * and an <svg> with a viewBox that frames it.
+ */
+export function SproutyAccessoryPopOff({ accessoryId }: SproutyAccessoryProps) {
+  if (accessoryId === 'acc-cape') {
+    return (
+      <g>
+        <CapeBack />
+        <CapeCollar />
+      </g>
+    );
+  }
+  return null;
+}
