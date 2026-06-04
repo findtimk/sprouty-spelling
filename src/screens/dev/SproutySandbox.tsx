@@ -75,6 +75,7 @@ const HATS: { id: string | null; label: string }[] = [
 const ACCESSORIES: { id: string | null; label: string }[] = [
   { id: null, label: 'None' },
   { id: 'acc-sunglasses', label: '😎 Star Shades' },
+  { id: 'acc-cape', label: '🦸 Super Cape' },
 ];
 
 export default function SproutySandbox() {

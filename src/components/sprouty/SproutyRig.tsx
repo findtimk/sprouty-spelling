@@ -21,7 +21,7 @@ import { motion } from 'framer-motion';
 import type { TargetAndTransition } from 'framer-motion';
 import { idle, bodyScale, floretSquish, BODY_SCALEX_GAIN } from './motions';
 import SproutyHat, { HAT_ANCHORS, HAT_MOTION, type RigHatId } from './SproutyHat';
-import SproutyAccessory, { RIG_ACCESSORIES, EYE_COVERING } from './SproutyAccessory';
+import SproutyAccessory, { SproutyAccessoryBack, RIG_ACCESSORIES, EYE_COVERING, BACK_LAYER } from './SproutyAccessory';
 
 export type SproutyExpression =
   | 'happy'
@@ -135,6 +135,9 @@ export default function SproutyRig({
   // them rather than peeking through.
   const rigAccessory = accessory && RIG_ACCESSORIES.has(accessory) ? accessory : null;
   const hidesEyes = !!(rigAccessory && EYE_COVERING.has(rigAccessory));
+  // Accessories with a part drawn BEHIND the whole body (e.g. the cape billows
+  // behind Sprouty). The front part still draws via the normal accessory layer.
+  const hasBackLayer = !!(rigAccessory && BACK_LAYER.has(rigAccessory));
   const t = Math.max(0, Math.min(1, inflated / 100));
   const inflating = inflated > 0;
 
@@ -255,6 +258,30 @@ export default function SproutyRig({
             Below the shake threshold it does the calm idle bob instead, so the
             early "just growing" phase stays relaxed. */}
         <motion.g animate={tremble ?? calmBob}>
+          {/* ══ CAPE (back layer) — billows BEHIND the whole body, so it's drawn
+              first inside the shake group (the front collar/clasp draws later, on
+              top). Two nested groups:
+                • SCALE — grows with the body using the SAME bodyScale(t) curve,
+                  about the body center (60,88), so the cape swells in lockstep and
+                  stays visible behind the balloon instead of being swallowed.
+                • FLUTTER — a gentle rotate sway hinged at the shoulders (~x60/y72)
+                  so the hem swings while the neck stays anchored. */}
+          {hasBackLayer && (
+            <motion.g
+              style={{ transformOrigin: '60px 88px' }}
+              animate={inflating ? bodyScale(t) : idle.body}
+              transition={inflating ? { type: 'spring', stiffness: 200, damping: 13, mass: 0.6 } : undefined}
+            >
+              <motion.g
+                style={{ transformOrigin: '60px 84px' }}
+                animate={{ rotate: [0, 2.2, 0, -2.2, 0] }}
+                transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <SproutyAccessoryBack accessoryId={rigAccessory!} />
+              </motion.g>
+            </motion.g>
+          )}
+
           {/* ══ LEGS — stubby legs descending from the body, feet angled outward
               (like the reference's little splayed stance). The leg is a tapered
               limb; the foot is an ellipse pointing out. They splay + drop as the
@@ -375,13 +402,24 @@ export default function SproutyRig({
             <circle cx="72" cy="28" r="4" fill={FLORET_LIGHT} opacity="0.45" />
           </motion.g>
 
-          {/* ══ ACCESSORY (face-worn) — drawn BEFORE the hat so headwear sits on
-              top of it. This matters for the space helmet: the shades then render
-              INSIDE/behind the visor glass instead of poking past the frame, the
-              way you'd actually wear sunglasses under a helmet. It tracks the
-              face's lift (same translate as the FACE group below) so it stays on
-              the eye line as the body swells. */}
-          {rigAccessory && (
+          {/* ══ ACCESSORY (front) — drawn BEFORE the hat so headwear sits on top
+              of it (e.g. the space helmet's visor over the shades). Two flavors:
+                • BACK-LAYER accessories (the cape): the front part is the COLLAR,
+                  which fastens the cape at the chest — so it scales with the body
+                  (same bodyScale about 60,88) to stay attached to the growing
+                  cape, NOT with the face.
+                • face-worn accessories (the shades): track the face's lift so they
+                  stay on the eye line as the body swells. */}
+          {rigAccessory && hasBackLayer && (
+            <motion.g
+              style={{ transformOrigin: '60px 88px' }}
+              animate={inflating ? bodyScale(t) : idle.body}
+              transition={inflating ? { type: 'spring', stiffness: 200, damping: 13, mass: 0.6 } : undefined}
+            >
+              <SproutyAccessory accessoryId={rigAccessory} />
+            </motion.g>
+          )}
+          {rigAccessory && !hasBackLayer && (
             <g transform={`translate(0, ${-faceLift})`}>
               <SproutyAccessory accessoryId={rigAccessory} />
             </g>
