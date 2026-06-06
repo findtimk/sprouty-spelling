@@ -33,6 +33,70 @@ export const HIDES_MOUTH = new Set<string>(['costume-ninja']);
 /** Costumes with a layer drawn BEHIND the whole character (the katana on the back). */
 export const COSTUME_BACK_LAYER = new Set<string>(['costume-ninja']);
 
+/* ════════════════════════ ARM POSE (per-costume) ════════════════════════ */
+//
+// The rig builds each arm as a quadratic: shoulder → bowed elbow → hand, with all
+// points expressed as OFFSETS from the body's side edge — so any pose rides the
+// inflation for free (the edge expands as the body balloons). A costume can swap
+// the RESTING pose; the rig still flexes it toward "braced/straight-out" as
+// inflation (`brace` 0→1) ramps, and shrinks it with `len` near the pop.
+//
+// All X offsets are signed by the arm's own `side` baked in (left = negative dir),
+// so each arm is described independently — that's what lets the ninja be ASYMMETRIC.
+
+/** One arm's pose. X values are absolute horizontal offsets from the body edge
+ *  (positive = outward, away from center); the rig multiplies by `len`. Y values
+ *  are absolute rig-space heights. rest* = relaxed pose; brace* = flung-out (pop). */
+export interface ArmPose {
+  shoulderYOff: number;  // shoulder height (rig y)
+  elbowXOut: number;     // how far the elbow bows OUT past the edge (×len)
+  elbowYOff: number;     // elbow height (rig y)
+  restXOut: number;      // resting hand distance OUT from the edge (×len)
+  restYOff: number;      // resting hand height (rig y)
+  braceXOut: number;     // braced hand distance OUT (×len)
+  braceYOff: number;     // braced hand height (rig y)
+}
+
+export interface CostumeArmPose {
+  left: ArmPose;
+  right: ArmPose;
+}
+
+/** The DEFAULT hands-on-hips pose — reproduces the rig's original arm numbers
+ *  exactly (so a non-costumed Sprouty is unchanged). Both arms identical. */
+const DEFAULT_ARM: ArmPose = {
+  shoulderYOff: 90, elbowXOut: 15, elbowYOff: 99,
+  restXOut: 2, restYOff: 106, braceXOut: 22, braceYOff: 92,
+};
+const DEFAULT_POSE: CostumeArmPose = { left: DEFAULT_ARM, right: DEFAULT_ARM };
+
+/** NINJA fighting stance — ASYMMETRIC karate guard:
+ *   • LEFT arm  = lead: raised + forward, hand up at chest height (chop guard).
+ *   • RIGHT arm = rear: low + tucked back near the hip.
+ *  (The LEAD arm is on the LEFT so it doesn't collide with the katana, which is
+ *  slung on the upper-RIGHT.) Both still straighten OUT as `brace` ramps and
+ *  shrink with `len`, so the pop behaviour is preserved — only the resting shape
+ *  changes. */
+const NINJA_POSE: CostumeArmPose = {
+  // lead arm — up and forward (raised guard)
+  left: {
+    shoulderYOff: 86, elbowXOut: 17, elbowYOff: 88,
+    restXOut: 16, restYOff: 78, braceXOut: 26, braceYOff: 74,
+  },
+  // rear arm — low and back
+  right: {
+    shoulderYOff: 92, elbowXOut: 12, elbowYOff: 101,
+    restXOut: 5, restYOff: 108, braceXOut: 22, braceYOff: 96,
+  },
+};
+
+/** Returns the arm pose for a costume (or the default hands-on-hips pose). Add a
+ *  case per costume that wants a custom stance (robot = stiff, etc.). */
+export function getCostumeArmPose(costumeId: string | null): CostumeArmPose {
+  if (costumeId === 'costume-ninja') return NINJA_POSE;
+  return DEFAULT_POSE;
+}
+
 /* ── Ninja outfit palette ── */
 const GI = '#222228';         // near-black gi fabric (slightly warm so folds read)
 const GI_DARK = '#0C0C0F';    // lapel / fold shadow lines

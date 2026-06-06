@@ -25,7 +25,7 @@ import SproutyAccessory, { SproutyAccessoryBack, RIG_ACCESSORIES, EYE_COVERING, 
 import {
   SproutyCostumeBack, SproutyCostumeMask, SproutyCostumeBody, SproutyCostumeHeadband,
   SproutyCostumeTails, RIG_COSTUMES, HIDES_MOUTH, COSTUME_BACK_LAYER,
-  GI_STROKE, GI_STROKE_OUTLINE,
+  GI_STROKE, GI_STROKE_OUTLINE, getCostumeArmPose, type ArmPose,
 } from './SproutyCostume';
 
 export type SproutyExpression =
@@ -78,29 +78,20 @@ interface ArmGeom {
   handY: number;
 }
 
-function armGeom(edgeX: number, side: number, brace: number, len: number): ArmGeom {
-  // The arm attaches to the SIDE EDGE of the body at two different heights:
-  //   • shoulder  — on the side edge, up near the top of the torso
-  //   • hand      — on the side edge, lower down at the waist
-  // and the ELBOW bows outward past the edge between them. Both ends stay on
-  // the side (never pulled toward the center), so the arm sits beside the body
-  // and the outward bulge opens a white-space gap between the arm and the side.
-  // Shoulder sits on the side edge at MID-TORSO — well BELOW the face (eyes
-  // y~72, mouth y~82), so the arm clearly comes off the side of the body, not
-  // up by the mouth.
+function armGeom(edgeX: number, side: number, brace: number, len: number, pose: ArmPose): ArmGeom {
+  // The arm attaches to the SIDE EDGE of the body and the ELBOW bows outward past
+  // the edge. The SHAPE comes from `pose` (per-costume), with all X positions as
+  // offsets from the edge (×len) so the arm rides inflation as the body balloons,
+  // and the hand lerping from its RESTING spot to its BRACED (flung-out) spot as
+  // `brace` 0→1. Default pose = the original hands-on-hips numbers.
   const shoulderX = edgeX + side * 1;     // just outside the side edge
-  const shoulderY = 90;
-  // Elbow bows outward past the edge — the bulge that opens the gap.
-  const elbowX = edgeX + side * (15 * len);
-  const elbowY = 99;
-  // Hand: resting = back ON the side edge at the waist, BELOW the shoulder, so
-  // the arm is a vertical arc beside the body. Braced = swings further OUT.
-  const restHandX = edgeX + side * (2 * len);     // on the side edge, lower
-  const braceHandX = edgeX + side * (22 * len);   // out to the side
+  const shoulderY = pose.shoulderYOff;
+  const elbowX = edgeX + side * (pose.elbowXOut * len);
+  const elbowY = pose.elbowYOff;
+  const restHandX = edgeX + side * (pose.restXOut * len);
+  const braceHandX = edgeX + side * (pose.braceXOut * len);
   const handX = restHandX + (braceHandX - restHandX) * brace;
-  const restHandY = 106;                           // at the waist, below shoulder
-  const braceHandY = 92;
-  const handY = restHandY + (braceHandY - restHandY) * brace;
+  const handY = pose.restYOff + (pose.braceYOff - pose.restYOff) * brace;
   // Quadratic from shoulder, through the bowed-out elbow, to the hand.
   const d = `M ${shoulderX},${shoulderY} Q ${elbowX},${elbowY} ${handX},${handY}`;
   return { d, handX, handY };
@@ -152,6 +143,9 @@ export default function SproutyRig({
   const rigCostume = costume && RIG_COSTUMES.has(costume) ? costume : null;
   const hidesMouth = !!(rigCostume && HIDES_MOUTH.has(rigCostume));
   const costumeBack = !!(rigCostume && COSTUME_BACK_LAYER.has(rigCostume));
+  // Arm pose per costume (default = hands on hips; ninja = fighting stance). The
+  // rig still flexes/shrinks it with brace + limbScale, so it rides inflation.
+  const armPose = getCostumeArmPose(rigCostume);
   const t = Math.max(0, Math.min(1, inflated / 100));
   const inflating = inflated > 0;
 
@@ -390,8 +384,8 @@ export default function SproutyRig({
               the scaled body edge, shrinking toward a stub only near 100%.
               Outlined like the rest (wide OUTLINE stroke under, STALK over). ══ */}
           {(() => {
-            const left = armGeom(bodyLeftEdge, -1, brace, limbScale);
-            const right = armGeom(bodyRightEdge, +1, brace, limbScale);
+            const left = armGeom(bodyLeftEdge, -1, brace, limbScale, armPose.left);
+            const right = armGeom(bodyRightEdge, +1, brace, limbScale, armPose.right);
             const armW = 6 * limbScale;        // slightly thinner so the stroke
                                                // doesn't eat the white-space gap
             const handR = 5 * limbScale;       // distinct little hand/fist
