@@ -1,7 +1,12 @@
 import { RIG_HATS } from '../components/sprouty/SproutyHat';
 import { RIG_ACCESSORIES } from '../components/sprouty/SproutyAccessory';
+import { RIG_COSTUMES } from '../components/sprouty/SproutyCostume';
 
-export type ShopCategory = 'hat' | 'accessory' | 'skin' | 'dance';
+// NOTE: 'skin' is DEPRECATED — the legacy skin category is hidden (isItemAvailable
+// returns false for it) and superseded by 'costume' (outfits worn over the body,
+// built on the rig). The skin-* entries are kept inert and will be deleted in a
+// later cleanup.
+export type ShopCategory = 'hat' | 'accessory' | 'skin' | 'dance' | 'costume';
 
 export interface ShopItem {
   id: string;
@@ -52,6 +57,10 @@ export const shopItems: ShopItem[] = [
   { id: 'dance-robot', name: 'Robot Dance', category: 'dance', cost: 30, emoji: '🤖', description: 'Beep boop boogie!' },
   { id: 'dance-floss', name: 'Floss Dance', category: 'dance', cost: 30, emoji: '🦷', description: 'Floss it out!' },
   { id: 'dance-jump', name: 'Super Jump', category: 'dance', cost: 30, emoji: '⬆️', description: 'Bounce to the top!' },
+
+  // Costumes (40 stars) — full outfits worn OVER the green broccoli, built on the
+  // rig (supersede the deprecated 'skin' category).
+  { id: 'costume-ninja', name: 'Ninja', category: 'costume', cost: 40, emoji: '🥷', description: 'Silent but deadly!' },
 ];
 
 export function getItemsByCategory(category: ShopCategory): ShopItem[] {
@@ -66,12 +75,14 @@ export function getItemsByCategory(category: ShopCategory): ShopItem[] {
  *
  * Expand this as cosmetics get rebuilt on the rig:
  *   • hats — gated by RIG_HATS (cowboy, space today; the single source of truth).
- *   • accessories — gated by RIG_ACCESSORIES (star shades today).
- *   • skin / dance — none on the rig yet → all hidden for now.
+ *   • accessories — gated by RIG_ACCESSORIES (star shades, cape today).
+ *   • costumes — gated by RIG_COSTUMES (ninja today).
+ *   • skin (deprecated) / dance — none on the rig → all hidden.
  */
 export function isItemAvailable(item: ShopItem): boolean {
   if (item.category === 'hat') return RIG_HATS.has(item.id);
   if (item.category === 'accessory') return RIG_ACCESSORIES.has(item.id);
+  if (item.category === 'costume') return RIG_COSTUMES.has(item.id);
   return false;
 }
 

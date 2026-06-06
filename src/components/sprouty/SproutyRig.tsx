@@ -22,6 +22,11 @@ import type { TargetAndTransition } from 'framer-motion';
 import { idle, bodyScale, floretSquish, BODY_SCALEX_GAIN } from './motions';
 import SproutyHat, { HAT_ANCHORS, HAT_MOTION, type RigHatId } from './SproutyHat';
 import SproutyAccessory, { SproutyAccessoryBack, RIG_ACCESSORIES, EYE_COVERING, BACK_LAYER } from './SproutyAccessory';
+import {
+  SproutyCostumeBack, SproutyCostumeMask, SproutyCostumeBody, SproutyCostumeHeadband,
+  SproutyCostumeTails, RIG_COSTUMES, HIDES_MOUTH, COSTUME_BACK_LAYER,
+  GI_STROKE, GI_STROKE_OUTLINE,
+} from './SproutyCostume';
 
 export type SproutyExpression =
   | 'happy'
@@ -41,6 +46,8 @@ interface SproutyRigProps {
   hat?: string | null;
   /** Equipped accessory id (e.g. 'acc-sunglasses'). Only rig-native accessories draw here. */
   accessory?: string | null;
+  /** Equipped costume id (e.g. 'costume-ninja'). A full-body outfit drawn OVER the body. */
+  costume?: string | null;
   className?: string;
 }
 
@@ -127,6 +134,7 @@ export default function SproutyRig({
   inflated = 0,
   hat = null,
   accessory = null,
+  costume = null,
   className = '',
 }: SproutyRigProps) {
   const face = getFace(expression);
@@ -138,6 +146,12 @@ export default function SproutyRig({
   // Accessories with a part drawn BEHIND the whole body (e.g. the cape billows
   // behind Sprouty). The front part still draws via the normal accessory layer.
   const hasBackLayer = !!(rigAccessory && BACK_LAYER.has(rigAccessory));
+  // Rig-native COSTUME (full outfit drawn OVER the green body — see SproutyCostume).
+  // The body render is unchanged; the outfit is additive overlays. A costume mask
+  // hides the mouth+cheeks; the katana is a back layer.
+  const rigCostume = costume && RIG_COSTUMES.has(costume) ? costume : null;
+  const hidesMouth = !!(rigCostume && HIDES_MOUTH.has(rigCostume));
+  const costumeBack = !!(rigCostume && COSTUME_BACK_LAYER.has(rigCostume));
   const t = Math.max(0, Math.min(1, inflated / 100));
   const inflating = inflated > 0;
 
@@ -282,6 +296,19 @@ export default function SproutyRig({
             </motion.g>
           )}
 
+          {/* ══ KATANA (costume back layer) — slung on the BACK behind the body, so
+              drawn first inside the shake group. Scales with the body like the cape
+              so it stays in proportion as Sprouty inflates. */}
+          {costumeBack && (
+            <motion.g
+              style={{ transformOrigin: '60px 88px' }}
+              animate={inflating ? bodyScale(t) : idle.body}
+              transition={inflating ? { type: 'spring', stiffness: 200, damping: 13, mass: 0.6 } : undefined}
+            >
+              <SproutyCostumeBack costumeId={rigCostume!} />
+            </motion.g>
+          )}
+
           {/* ══ LEGS — stubby legs descending from the body, feet angled outward
               (like the reference's little splayed stance). The leg is a tapered
               limb; the foot is an ellipse pointing out. They splay + drop as the
@@ -297,11 +324,25 @@ export default function SproutyRig({
                 {/* left leg (outline under + fill over) + outward foot */}
                 <path d={leftLegD} fill="none" stroke={OUTLINE} strokeWidth={legW + 3} strokeLinecap="round" />
                 <path d={leftLegD} fill="none" stroke={STALK} strokeWidth={legW} strokeLinecap="round" />
+                {/* costume leg-wrap: a slightly wider black stroke OVER the green leg
+                    (skips the foot ellipse → feet stay green) */}
+                {rigCostume && (
+                  <>
+                    <path d={leftLegD} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={legW + 4} strokeLinecap="round" />
+                    <path d={leftLegD} fill="none" stroke={GI_STROKE} strokeWidth={legW + 1} strokeLinecap="round" />
+                  </>
+                )}
                 <ellipse cx={45 - footSpread} cy={122 + footDrop} rx={footRx} ry={footRy}
                   fill={STALK_DARK} stroke={OUTLINE} strokeWidth="2.5" transform={`rotate(-12 ${45 - footSpread} ${122 + footDrop})`} />
                 {/* right leg + outward foot */}
                 <path d={rightLegD} fill="none" stroke={OUTLINE} strokeWidth={legW + 3} strokeLinecap="round" />
                 <path d={rightLegD} fill="none" stroke={STALK} strokeWidth={legW} strokeLinecap="round" />
+                {rigCostume && (
+                  <>
+                    <path d={rightLegD} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={legW + 4} strokeLinecap="round" />
+                    <path d={rightLegD} fill="none" stroke={GI_STROKE} strokeWidth={legW + 1} strokeLinecap="round" />
+                  </>
+                )}
                 <ellipse cx={75 + footSpread} cy={122 + footDrop} rx={footRx} ry={footRy}
                   fill={STALK_DARK} stroke={OUTLINE} strokeWidth="2.5" transform={`rotate(12 ${75 + footSpread} ${122 + footDrop})`} />
               </g>
@@ -337,6 +378,9 @@ export default function SproutyRig({
             />
             {/* left highlight strip — follows the cylinder's left edge */}
             <rect x="49" y="70" width="6" height="34" rx="3" fill={STALK_LIGHT} opacity="0.55" />
+            {/* costume GI JACKET — worn over the torso (lapels + belt). Inside the
+                body scale group so it swells with the body during inflation. */}
+            {rigCostume && <SproutyCostumeBody costumeId={rigCostume} />}
           </motion.g>
 
           {/* ══ ARMS — drawn AFTER the body so the full bent shape reads ON TOP:
@@ -359,6 +403,16 @@ export default function SproutyRig({
                 {/* limb fill (over) */}
                 <path d={left.d}  fill="none" stroke={STALK} strokeWidth={armW} strokeLinecap="round" />
                 <path d={right.d} fill="none" stroke={STALK} strokeWidth={armW} strokeLinecap="round" />
+                {/* costume SLEEVES: slightly wider black stroke OVER the green arm
+                    (drawn before the hands → green fists poke out of the cuffs) */}
+                {rigCostume && (
+                  <>
+                    <path d={left.d}  fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={armW + 4} strokeLinecap="round" />
+                    <path d={right.d} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={armW + 4} strokeLinecap="round" />
+                    <path d={left.d}  fill="none" stroke={GI_STROKE} strokeWidth={armW + 1.5} strokeLinecap="round" />
+                    <path d={right.d} fill="none" stroke={GI_STROKE} strokeWidth={armW + 1.5} strokeLinecap="round" />
+                  </>
+                )}
                 {/* hands — drawn last so they sit clearly on the hip */}
                 <circle cx={left.handX}  cy={left.handY}  r={handR} fill={STALK} stroke={OUTLINE} strokeWidth="2.5" />
                 <circle cx={right.handX} cy={right.handY} r={handR} fill={STALK} stroke={OUTLINE} strokeWidth="2.5" />
@@ -401,6 +455,34 @@ export default function SproutyRig({
             <circle cx="52" cy="24" r="6" fill={FLORET_LIGHT} opacity="0.55" />
             <circle cx="72" cy="28" r="4" fill={FLORET_LIGHT} opacity="0.45" />
           </motion.g>
+
+          {/* ══ COSTUME HEADBAND — worn on the head, so it rides up with the floret
+              (same floretLift). The band + "B" sit across the floret base; the
+              tails trail to the right in their own flutter group. ══ */}
+          {rigCostume && (
+            <g transform={`translate(0, ${-floretLift})`}>
+              {/* tails first (behind the band), gently fluttering */}
+              <motion.g
+                style={{ transformOrigin: '88px 63px' }}
+                animate={{ rotate: [0, 3, 0, -3, 0] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <SproutyCostumeTails costumeId={rigCostume} />
+              </motion.g>
+              <SproutyCostumeHeadband costumeId={rigCostume} />
+            </g>
+          )}
+
+          {/* ══ COSTUME MASK — black fabric over the lower face. Drawn HERE (before
+              the accessory + hat layers, tracking the face lift) so a face-worn
+              accessory like the star shades renders ON TOP of the mask instead of
+              being buried behind it. The eyes are above the mask and draw later in
+              the face group. ══ */}
+          {rigCostume && (
+            <g transform={`translate(0, ${-faceLift})`}>
+              <SproutyCostumeMask costumeId={rigCostume} />
+            </g>
+          )}
 
           {/* ══ ACCESSORY (front) — drawn BEFORE the hat so headwear sits on top
               of it (e.g. the space helmet's visor over the shades). Two flavors:
@@ -449,8 +531,8 @@ export default function SproutyRig({
         {/* ══ FACE (front-most) — rides up with the swelling body ══
             Drawn outside the stalk's scale group so it doesn't distort. */}
         <g transform={`translate(0, ${-faceLift})`}>
-          {/* cheeks */}
-          {(expression === 'happy' || expression === 'excited' || expression === 'celebrating' || strain) && (
+          {/* cheeks — hidden when a costume mask covers the lower face */}
+          {!hidesMouth && (expression === 'happy' || expression === 'excited' || expression === 'celebrating' || strain) && (
             <>
               <circle cx="46" cy="80" r="5" fill={strain ? '#ff8a8a' : '#ffb3b3'} opacity={strain ? 0.75 : 0.5} />
               <circle cx="74" cy="80" r="5" fill={strain ? '#ff8a8a' : '#ffb3b3'} opacity={strain ? 0.75 : 0.5} />
@@ -497,15 +579,17 @@ export default function SproutyRig({
             </>
           )}
 
-          {/* mouth */}
-          <path
-            d={face.mouth}
-            stroke="#1a1a1a"
-            strokeWidth="2.5"
-            fill={face.open ? '#ff6b6b' : 'none'}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* mouth — hidden when a costume mask covers the lower face */}
+          {!hidesMouth && (
+            <path
+              d={face.mouth}
+              stroke="#1a1a1a"
+              strokeWidth="2.5"
+              fill={face.open ? '#ff6b6b' : 'none'}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
         </g>
         </motion.g>
       </svg>

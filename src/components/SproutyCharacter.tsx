@@ -2,6 +2,7 @@ import { motion, type TargetAndTransition } from 'framer-motion';
 import SproutyRig from './sprouty/SproutyRig';
 import { RIG_HATS } from './sprouty/SproutyHat';
 import { RIG_ACCESSORIES } from './sprouty/SproutyAccessory';
+import { RIG_COSTUMES } from './sprouty/SproutyCostume';
 
 export type SproutyExpression = 'happy' | 'excited' | 'worried' | 'determined' | 'celebrating' | 'dizzy' | 'hurt';
 
@@ -16,6 +17,7 @@ interface SproutyCharacterProps {
     accessory?: string | null;
     skin?: string | null;
     dance?: string | null;
+    costume?: string | null;
   };
 }
 
@@ -133,10 +135,13 @@ export default function SproutyCharacter({
   const rigHat = equipped?.hat && RIG_HATS.has(equipped.hat) ? equipped.hat : null;
   const rigAccessory =
     equipped?.accessory && RIG_ACCESSORIES.has(equipped.accessory) ? equipped.accessory : null;
+  const rigCostume =
+    equipped?.costume && RIG_COSTUMES.has(equipped.costume) ? equipped.costume : null;
   // A cosmetic forces the legacy fallback only if it's NOT yet rebuilt on the rig.
   const hasLegacyCosmetic = !!(
     (equipped?.hat && !rigHat) ||
     (equipped?.accessory && !rigAccessory) ||
+    (equipped?.costume && !rigCostume) ||
     equipped?.skin ||
     equipped?.dance
   );
@@ -152,6 +157,7 @@ export default function SproutyCharacter({
         inflated={inflated}
         hat={rigHat}
         accessory={rigAccessory}
+        costume={rigCostume}
         className={className}
       />
     );

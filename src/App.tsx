@@ -23,8 +23,9 @@ interface Stars {
 interface Equipped {
   hat: string | null;
   accessory: string | null;
-  skin: string | null;
+  skin: string | null;     // deprecated (legacy category, hidden) — kept for stored data
   dance: string | null;
+  costume: string | null;
 }
 
 interface Progress {
@@ -38,7 +39,7 @@ export default function App() {
   const [stars, setStars] = useLocalStorage<Stars>('sprouty_stars', { total: 0, available: 0 });
   const [inventory, setInventory] = useLocalStorage<string[]>('sprouty_inventory', []);
   const [equipped, setEquipped] = useLocalStorage<Equipped>('sprouty_equipped', {
-    hat: null, accessory: null, skin: null, dance: null,
+    hat: null, accessory: null, skin: null, dance: null, costume: null,
   });
   const [progress, setProgress] = useLocalStorage<Progress>('sprouty_progress', {
     easy: 0, medium: 0, hard: 0,
@@ -62,10 +63,12 @@ export default function App() {
         accessory: keep(prev.accessory),
         skin: keep(prev.skin),
         dance: keep(prev.dance),
+        costume: keep(prev.costume),
       };
       const unchanged =
         next.hat === prev.hat && next.accessory === prev.accessory &&
-        next.skin === prev.skin && next.dance === prev.dance;
+        next.skin === prev.skin && next.dance === prev.dance &&
+        next.costume === prev.costume;
       return unchanged ? prev : next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,7 +133,7 @@ export default function App() {
   const handleResetAll = useCallback(() => {
     setStars({ total: 0, available: 0 });
     setInventory([]);
-    setEquipped({ hat: null, accessory: null, skin: null, dance: null });
+    setEquipped({ hat: null, accessory: null, skin: null, dance: null, costume: null });
     setProgress({ easy: 0, medium: 0, hard: 0 });
   }, [setStars, setInventory, setEquipped, setProgress]);
 

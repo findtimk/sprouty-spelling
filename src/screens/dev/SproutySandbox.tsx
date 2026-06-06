@@ -18,7 +18,14 @@ import ConfettiPop from '../../components/sprouty/ConfettiPop';
  * WITHOUT spelling 10 words. Mirrors GamePlay.tsx's GrowthModeVisual numbers
  * (baseSize, the 1.8× multiplier) and the #root max-width of 500px.
  */
-function GrowthSceneMock({ growthPercent }: { growthPercent: number }) {
+function GrowthSceneMock({
+  growthPercent, hat, accessory, costume,
+}: {
+  growthPercent: number;
+  hat?: string | null;
+  accessory?: string | null;
+  costume?: string | null;
+}) {
   const baseSize = 72;
   const size = Math.round(baseSize * (1 + (growthPercent / 100) * 1.8));
   const expression: SproutyExpression =
@@ -38,7 +45,7 @@ function GrowthSceneMock({ growthPercent }: { growthPercent: number }) {
 
       {/* the real character via the real component path (inflated > 0 → rig) */}
       <div className="flex items-end justify-center relative" style={{ minHeight: size + 16 }}>
-        <SproutyCharacter expression={expression} size={size} inflated={growthPercent} equipped={{}} />
+        <SproutyCharacter expression={expression} size={size} inflated={growthPercent} equipped={{ hat, accessory, costume }} />
       </div>
 
       {/* clue bubble stand-in */}
@@ -78,11 +85,17 @@ const ACCESSORIES: { id: string | null; label: string }[] = [
   { id: 'acc-cape', label: '🦸 Super Cape' },
 ];
 
+const COSTUMES: { id: string | null; label: string }[] = [
+  { id: null, label: 'None' },
+  { id: 'costume-ninja', label: '🥷 Ninja' },
+];
+
 export default function SproutySandbox() {
   const [inflated, setInflated] = useState(0);
   const [expression, setExpression] = useState<SproutyExpression>('happy');
   const [hat, setHat] = useState<string | null>(null);
   const [accessory, setAccessory] = useState<string | null>(null);
+  const [costume, setCostume] = useState<string | null>(null);
 
   return (
     <div className="min-h-dvh p-6 font-body" style={{ background: '#f0fdf4' }}>
@@ -100,7 +113,7 @@ export default function SproutySandbox() {
             className="flex items-end justify-center rounded-xl"
             style={{ width: 240, height: 240, background: '#ecfdf5' }}
           >
-            <SproutyRig expression={expression} inflated={inflated} hat={hat} accessory={accessory} size={180} />
+            <SproutyRig expression={expression} inflated={inflated} hat={hat} accessory={accessory} costume={costume} size={180} />
           </div>
 
           <div className="flex-1 w-full">
@@ -172,6 +185,25 @@ export default function SproutySandbox() {
                 </button>
               ))}
             </div>
+
+            <label className="block text-sm font-bold text-green-800 mb-2 mt-4">
+              Costume
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {COSTUMES.map((c) => (
+                <button
+                  key={c.label}
+                  onClick={() => setCostume(c.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition ${
+                    costume === c.id
+                      ? 'bg-slate-700 text-white'
+                      : 'bg-slate-200 text-slate-800'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -200,7 +232,7 @@ export default function SproutySandbox() {
         {[0, 50, 90, 100].map((pct) => (
           <div key={pct}>
             <div className="text-xs font-semibold text-green-700 mb-1">growthPercent = {pct}%</div>
-            <GrowthSceneMock growthPercent={pct} />
+            <GrowthSceneMock growthPercent={pct} hat={hat} accessory={accessory} costume={costume} />
           </div>
         ))}
       </div>
@@ -239,6 +271,8 @@ export default function SproutySandbox() {
                 expression={pct >= 90 ? 'hurt' : pct >= 76 ? 'dizzy' : pct >= 58 ? 'worried' : pct >= 40 ? 'determined' : pct >= 20 ? 'excited' : 'happy'}
                 inflated={pct}
                 hat={hat}
+                accessory={accessory}
+                costume={costume}
                 size={110}
               />
             </div>

@@ -146,27 +146,38 @@ Listed cheapest → priciest (this is also the shop tab order):
 
 | Category | Price | # items | What it changes | Live on the new rig? |
 |---|---|---|---|---|
-| **Accessories** | 10⭐ | 2 | Non-headwear add-ons (shades, cape) | ✅ shades live; cape pending |
+| **Accessories** | 10⭐ | 2 | Non-headwear add-ons (shades, cape) | ✅ both live |
 | **Hats** | 25⭐ | 8 | Headwear | ✅ only cowboy + space; other 6 hidden |
 | **Dances** | 30⭐ | 7 | Victory move at level end | ❌ hidden (still old art) |
-| **Skins** | 40⭐ | 8 | Recolor + whole-body effects | ❌ hidden (still old art) |
+| **Costumes** | 40⭐ | 1 | Full outfit worn OVER the body | ✅ ninja live |
+| **Skins** *(deprecated)* | 40⭐ | 8 | Recolor of the body | ❌ hidden; superseded by Costumes |
 
-**Price swap (this session):** accessories were 25⭐ and hats 10⭐; we swapped them so
-**accessories are the cheapest starter tier (10⭐)** and **hats step up to 25⭐**. Reason:
-our hats are far more impressive than the current accessories (a full astronaut helmet vs.
-a pair of shades), so price should reflect that. The shop tab order was also reordered
-accessories-first to match.
+**Price swap (earlier):** accessories were 25⭐ and hats 10⭐; we swapped them so
+**accessories are the cheapest starter tier (10⭐)** and **hats step up to 25⭐**, since our
+hats are more impressive than the current accessories.
 
-**Caveat:** the *catalog* has 4 categories, but the *shop a kid actually sees* is currently
-**Accessories (Cool Shades) + Hats (cowboy, space)** only. Since the rig overhaul,
-`isItemAvailable()` gates out any cosmetic not rebuilt on the rig (skins/dances would
-revert Sprouty to the old art), and `Shop.tsx` hides empty category tabs. Re-opening the
-rest depends on P3 (cosmetics on the rig).
+**Costume vs. skin (this session):** the old **`skin`** category recolored the body. We
+replaced that idea with a new **`costume`** category — outfits *worn OVER the green
+broccoli* (additive overlays, body unchanged underneath), which honors "don't break the
+broccoli" and reuses the cape/shades overlay mechanism. We **added `costume` alongside
+`skin`** rather than renaming (less churn, never touches the fragile legacy skin code); the
+8 `skin-*` entries stay hidden + inert and get deleted in a future cleanup. First costume:
+**Ninja** (`costume-ninja`, 40⭐) — green head/hands/feet/eyes show; black gi jacket +
+sleeves + leg-wraps + belt, headband + "B" + fluttering tails, mask (hides mouth+cheeks)
+with a green knot, and a katana on the back. Built in `src/components/sprouty/SproutyCostume.tsx`
+(pattern: `RIG_COSTUMES` + `HIDES_MOUTH` + `COSTUME_BACK_LAYER`, mirroring `SproutyAccessory`).
+Sleeves/leg-wraps are extra black stroke passes over the rig's own arm/leg paths, so they
+track inflation for free. **This overlay-not-recolor pattern is how the remaining costumes
+(gold, rainbow, robot, …) should be built** — re-themed from the old skin ideas.
+
+**Caveat:** the *shop a kid actually sees* is **Accessories (shades, cape) + Hats (cowboy,
+space) + Costumes (ninja)**. `isItemAvailable()` still gates out anything not on the rig
+(legacy skins/dances), and `Shop.tsx` hides empty category tabs.
 
 ### Pricing logic (the ladder)
 
 Cost tracks **scope of impact** (cheaper = simpler item):
-- **Looks** — changes how Sprouty *looks* → accessories (10⭐) / hats (25⭐) / skins (40⭐).
+- **Looks** — changes how Sprouty *looks* → accessories (10⭐) / hats (25⭐) / costumes (40⭐).
 - **Moves** — changes how Sprouty *moves* → dances (30⭐).
 - **The big moments** — changes the world / payoff moments *around* Sprouty → the new,
   premium frontier (60⭐+). This is where the most exciting (and most expensive) rewards

@@ -7,17 +7,19 @@ import { getAvailableItems, type ShopCategory, type ShopItem } from '../game/sho
 interface ShopProps {
   stars: number;
   inventory: string[];
-  equipped: { hat: string | null; accessory: string | null; skin: string | null; dance: string | null };
+  equipped: { hat: string | null; accessory: string | null; skin: string | null; dance: string | null; costume: string | null };
   onBuy: (itemId: string, cost: number) => void;
   onEquip: (category: ShopCategory, itemId: string | null) => void;
   onBack: () => void;
 }
 
 // Ordered cheapest → priciest: accessories (10⭐, starter tier) first, then hats
-// (25⭐), then dances (30⭐) and skins (40⭐).
+// (25⭐), then costumes (40⭐). 'skin' is deprecated/hidden (auto-filtered out by
+// visibleCategories since it has no available items) and 'dance' is not on the rig yet.
 const categories: { id: ShopCategory; label: string; icon: string }[] = [
   { id: 'accessory', label: 'Accessories', icon: '😎' },
   { id: 'hat', label: 'Hats', icon: '🎩' },
+  { id: 'costume', label: 'Costumes', icon: '🥷' },
   { id: 'skin', label: 'Skins', icon: '🎨' },
   { id: 'dance', label: 'Dances', icon: '💃' },
 ];
@@ -74,6 +76,7 @@ export default function Shop({ stars, inventory, equipped, onBuy, onEquip, onBac
               hat: equipped.hat,
               accessory: equipped.accessory,
               skin: equipped.skin,
+              costume: equipped.costume,
             }}
           />
         </div>

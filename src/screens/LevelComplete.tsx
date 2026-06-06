@@ -4,6 +4,7 @@ import SproutyCharacter from '../components/SproutyCharacter';
 import SproutyRig from '../components/sprouty/SproutyRig';
 import SproutyHat, { RIG_HATS, HAT_MOTION, type RigHatId } from '../components/sprouty/SproutyHat';
 import { RIG_ACCESSORIES, POP_OFF_ACCESSORIES, SproutyAccessoryPopOff } from '../components/sprouty/SproutyAccessory';
+import { RIG_COSTUMES, POP_OFF_COSTUMES, SproutyCostumePopOff } from '../components/sprouty/SproutyCostume';
 import ConfettiPop from '../components/sprouty/ConfettiPop';
 import Confetti from '../components/Confetti';
 import type { GameMode } from '../game/modes';
@@ -54,10 +55,12 @@ function getModeMessage(mode: GameMode, villainName?: string): { title: string; 
  *   4. POP      — instant cut to a big floret-confetti burst + "POP!", a white
  *                 screen-flash and a quick screen shake. Then done.
  */
-function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void; onPop?: () => void; hat?: string | null; accessory?: string | null }) {
+function GrowthExplosion({ onDone, onPop, hat, accessory, costume }: { onDone: () => void; onPop?: () => void; hat?: string | null; accessory?: string | null; costume?: string | null }) {
   const [phase, setPhase] = useState<'windup' | 'spinup' | 'freeze' | 'pop'>('windup');
   const rigHat = hat && RIG_HATS.has(hat) ? hat : null;
   const rigAccessory = accessory && RIG_ACCESSORIES.has(accessory) ? accessory : null;
+  const rigCostume = costume && RIG_COSTUMES.has(costume) ? costume : null;
+  const popOffCostume = rigCostume && POP_OFF_COSTUMES.has(rigCostume) ? rigCostume : null;
   const popOffAccessory = rigAccessory && POP_OFF_ACCESSORIES.has(rigAccessory) ? rigAccessory : null;
   // Some hats (the space helmet) FALL BACK and bounce after popping off — that
   // landing beat takes longer, so we hold the pop subtree open until it lands.
@@ -94,7 +97,7 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
             transition={{ duration: 0.55, ease: 'easeIn' }}
             style={{ transformOrigin: 'center bottom' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} costume={rigCostume} />
           </motion.div>
         )}
 
@@ -111,7 +114,7 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
             transition={{ duration: 1.2, times: [0, 0.35, 0.6, 0.82, 1], ease: 'easeIn' }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} costume={rigCostume} />
           </motion.div>
         )}
 
@@ -123,7 +126,7 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
             transition={{ duration: 0.15 }}
             style={{ transformOrigin: 'center center' }}
           >
-            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} />
+            <SproutyRig expression="hurt" size={150} inflated={100} hat={rigHat} accessory={rigAccessory} costume={rigCostume} />
           </motion.div>
         )}
 
@@ -208,6 +211,11 @@ function GrowthExplosion({ onDone, onPop, hat, accessory }: { onDone: () => void
                 </svg>
               </motion.div>
             )}
+            {/* COSTUME POP-OFF — the ninja outfit comes APART at the burst: every
+                piece (headband, mask, gi, tails, katana) blasts out in its own
+                direction, spins, then rains down + fades. One big simultaneous
+                burst, layered over the confetti. */}
+            {popOffCostume && <SproutyCostumePopOff costumeId={popOffCostume} />}
             {/* bouncy POP! text */}
             <motion.div
               className="absolute"
@@ -308,6 +316,7 @@ export default function LevelComplete({
             onPop={() => { setPopFx(true); setTimeout(() => setPopFx(false), 400); }}
             hat={equipped?.hat}
             accessory={equipped?.accessory}
+            costume={equipped?.costume}
           />
         )}
         {mode === 'battle' && (
