@@ -22,7 +22,7 @@ interface LevelCompleteProps {
   difficulty: Difficulty;
   mode: GameMode;
   villainName?: string;
-  equipped: { hat?: string | null; accessory?: string | null; skin?: string | null; dance?: string | null };
+  equipped: { hat?: string | null; accessory?: string | null; skin?: string | null; dance?: string | null; costume?: string | null };
   onHome: () => void;
   onNextLevel: () => void;
 }
