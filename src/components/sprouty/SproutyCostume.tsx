@@ -97,6 +97,99 @@ export function getCostumeArmPose(costumeId: string | null): CostumeArmPose {
   return DEFAULT_POSE;
 }
 
+/* ════════════════════════ LEG POSE + STANCE (per-costume) ════════════════════════ */
+//
+// Legs mirror the arm system: each leg is a quadratic curve hip → bowed knee →
+// foot, all expressed as OFFSETS from the body's bottom-edge so the leg rides the
+// inflation (splays + drops) like before. A costume can swap the RESTING leg pose
+// — e.g. the ninja PLANTS one leg and KICKS the other up high — and the rig eases
+// the whole thing back toward the friendly standing default as Sprouty inflates
+// into a balloon (a kicking balloon looks odd, and the limbs shrink to stubs near
+// the top anyway). Bundled with the arms + a whole-body TILT into one `Stance`.
+
+/** One leg's pose. X offsets are absolute horizontal distances OUT from the body
+ *  bottom-edge (positive = outward, away from center), signed by the leg's own
+ *  `side`. Y values are absolute rig-space heights (bigger y = lower on screen).
+ *  A "planted" leg has its foot low (high y); a "kick" leg has its foot up high
+ *  (low y) and extended far OUT. */
+export interface LegPose {
+  hipXOut: number;    // where the leg leaves the body, OUT from the bottom edge
+  hipYOff: number;    // hip height (rig y) — where the leg attaches
+  kneeXOut: number;   // how far the knee bows OUT (the bend point)
+  kneeYOff: number;   // knee height (rig y)
+  footXOut: number;   // foot distance OUT from center
+  footYOff: number;   // foot height (rig y) — low = planted, high = kicking up
+  footRot: number;    // foot tilt in degrees (signed absolute; points a kick)
+}
+
+export interface Stance {
+  /** Whole-character lean in degrees (negative = lean back, the kick counterweight). */
+  bodyTilt: number;
+  arms: CostumeArmPose;
+  legs: { left: LegPose; right: LegPose };
+}
+
+/** DEFAULT legs — reproduce the rig's original stubby splayed stance EXACTLY, so a
+ *  non-costumed Sprouty (and every hat/accessory) is visually unchanged. The old
+ *  hardcoded paths were:
+ *    leftLeg  M 53,108 Q 50,116 49,120   foot ellipse @ (45,122) rot -12
+ *    rightLeg M 67,108 Q 70,116 71,120   foot ellipse @ (75,122) rot +12
+ *  Body bottom-edge center is x60; left edge ~x44, right edge ~x76. We express the
+ *  control points as OUT-from-center distances so legGeom() can re-derive them. */
+const DEFAULT_LEG_LEFT: LegPose = {
+  hipXOut: 7, hipYOff: 108, kneeXOut: 10, kneeYOff: 116,
+  footXOut: 15, footYOff: 122, footRot: -12,
+};
+const DEFAULT_LEG_RIGHT: LegPose = {
+  hipXOut: 7, hipYOff: 108, kneeXOut: 10, kneeYOff: 116,
+  footXOut: 15, footYOff: 122, footRot: 12,
+};
+const DEFAULT_STANCE: Stance = {
+  bodyTilt: 0,
+  arms: DEFAULT_POSE,
+  legs: { left: DEFAULT_LEG_LEFT, right: DEFAULT_LEG_RIGHT },
+};
+
+/** The default standing legs, exported so the rig can EASE any costume's dramatic
+ *  leg pose back toward this calm pose as Sprouty inflates into a balloon. */
+export const DEFAULT_STANCE_LEGS = DEFAULT_STANCE.legs;
+
+/** NINJA standing front-kick — the "hero" action pose from the reference art:
+ *   • whole body LEANS BACK to counterweight the kick.
+ *   • LEFT leg = STANDING leg: planted, slightly bent, foot down (the post he
+ *     balances on). Pulled a touch toward center so he reads as balancing.
+ *   • RIGHT leg = KICK leg: extended up-and-out, nearly straight, foot pointed
+ *     high (toward head height) — the snap of a front kick.
+ *  (Kick is on the RIGHT to mirror the reference; the lead arm/guard is on the
+ *  LEFT so the silhouette reads as wound-up-and-striking, not tangled.) */
+const NINJA_LEG_STANDING: LegPose = {
+  // post leg: planted and a touch bent, pushed OUT from under the body so it's
+  // clearly visible (not hidden behind the stalk) — the leg he balances on.
+  hipXOut: 6, hipYOff: 108, kneeXOut: 13, kneeYOff: 116,
+  footXOut: 17, footYOff: 124, footRot: -18,
+};
+const NINJA_LEG_KICK: LegPose = {
+  // hip stays on the body; the knee leads up-and-out and the foot extends FAR out
+  // to the right — a dynamic diagonal front-kick. Tuned so the foot lands at ~y96
+  // (mid-body height): high enough to read as a real kick, but LOW enough that it
+  // clears the floret/stalk seam (~y60) and doesn't bury the katana — the gold
+  // hilt + upper scabbard (slung upper-right) stay visible above the leg.
+  hipXOut: 4, hipYOff: 108, kneeXOut: 18, kneeYOff: 104,
+  footXOut: 42, footYOff: 96, footRot: 50,
+};
+const NINJA_STANCE: Stance = {
+  bodyTilt: -14, // lean back into the kick
+  arms: NINJA_POSE,
+  legs: { left: NINJA_LEG_STANDING, right: NINJA_LEG_KICK },
+};
+
+/** Returns the full STANCE (body tilt + arms + legs) for a costume, or the
+ *  friendly standing default. Add a case per costume that wants its own pose. */
+export function getStance(costumeId: string | null): Stance {
+  if (costumeId === 'costume-ninja') return NINJA_STANCE;
+  return DEFAULT_STANCE;
+}
+
 /* ── Ninja outfit palette ── */
 const GI = '#222228';         // near-black gi fabric (slightly warm so folds read)
 const GI_DARK = '#0C0C0F';    // lapel / fold shadow lines

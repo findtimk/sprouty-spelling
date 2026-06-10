@@ -25,7 +25,7 @@ import SproutyAccessory, { SproutyAccessoryBack, RIG_ACCESSORIES, EYE_COVERING, 
 import {
   SproutyCostumeBack, SproutyCostumeMask, SproutyCostumeBody, SproutyCostumeHeadband,
   SproutyCostumeTails, RIG_COSTUMES, HIDES_MOUTH, COSTUME_BACK_LAYER,
-  GI_STROKE, GI_STROKE_OUTLINE, getCostumeArmPose, type ArmPose,
+  GI_STROKE, GI_STROKE_OUTLINE, getStance, DEFAULT_STANCE_LEGS, type ArmPose, type LegPose,
 } from './SproutyCostume';
 
 export type SproutyExpression =
@@ -97,6 +97,53 @@ function armGeom(edgeX: number, side: number, brace: number, len: number, pose: 
   return { d, handX, handY };
 }
 
+/** One leg's drawn geometry: the stroked path (hip → bowed knee → foot) and the
+ *  foot ellipse center + rotation. Mirrors armGeom but for the lower limbs. */
+interface LegGeom {
+  d: string;
+  footX: number;
+  footY: number;
+  footRot: number;
+}
+
+/**
+ * Builds one leg from a LegPose. Like armGeom, every X is an OUT-from-CENTER
+ * distance (signed by `side`: -1 left, +1 right) and scaled by `len` (limbScale)
+ * so the leg shrinks to a stub near max inflation just like before. `spread`/
+ * `drop` are the inflation splay/sink the old hardcoded legs had — applied to the
+ * foot so the stance still braces under the ballooning body. The KICK leg's high
+ * foot rides these too, but since `pose` eases back to the planted default as the
+ * body inflates (done by the caller), the kick has already relaxed by then.
+ */
+function legGeom(cx: number, side: number, len: number, spread: number, drop: number, pose: LegPose): LegGeom {
+  const hipX = cx + side * pose.hipXOut;
+  const hipY = pose.hipYOff;
+  const kneeX = cx + side * (pose.kneeXOut * len + spread * 0.5);
+  const kneeY = pose.kneeYOff;
+  const footX = cx + side * (pose.footXOut * len + spread);
+  const footY = pose.footYOff + drop;
+  const d = `M ${hipX},${hipY} Q ${kneeX},${kneeY} ${footX},${footY}`;
+  // footRot is authored as a signed ABSOLUTE angle in the pose (left foot already
+  // tilts one way, right the other), so it passes through unchanged.
+  return { d, footX, footY, footRot: pose.footRot };
+}
+
+/** Linear interpolate between two LegPoses (a→b) by k (0..1). Used to ease a
+ *  costume's dramatic stance back toward the calm standing default as Sprouty
+ *  inflates into a balloon. */
+function lerpLeg(a: LegPose, b: LegPose, k: number): LegPose {
+  const m = (x: number, y: number) => x + (y - x) * k;
+  return {
+    hipXOut: m(a.hipXOut, b.hipXOut),
+    hipYOff: m(a.hipYOff, b.hipYOff),
+    kneeXOut: m(a.kneeXOut, b.kneeXOut),
+    kneeYOff: m(a.kneeYOff, b.kneeYOff),
+    footXOut: m(a.footXOut, b.footXOut),
+    footYOff: m(a.footYOff, b.footYOff),
+    footRot: m(a.footRot, b.footRot),
+  };
+}
+
 /* ── Face geometry per expression (seeded from the legacy getEyeProps/getMouthPath) ── */
 function getFace(expression: SproutyExpression) {
   switch (expression) {
@@ -143,9 +190,14 @@ export default function SproutyRig({
   const rigCostume = costume && RIG_COSTUMES.has(costume) ? costume : null;
   const hidesMouth = !!(rigCostume && HIDES_MOUTH.has(rigCostume));
   const costumeBack = !!(rigCostume && COSTUME_BACK_LAYER.has(rigCostume));
-  // Arm pose per costume (default = hands on hips; ninja = fighting stance). The
-  // rig still flexes/shrinks it with brace + limbScale, so it rides inflation.
-  const armPose = getCostumeArmPose(rigCostume);
+  // Full STANCE per costume (body tilt + arms + legs). Default = friendly standing
+  // pose; ninja = a leaned-back standing front-kick. The rig still flexes/shrinks
+  // the arms with brace + limbScale so they ride inflation; the legs + body-tilt
+  // EASE back toward the calm default as Sprouty inflates into a balloon (see
+  // `stanceEase` below) — a kicking balloon looks odd and the limbs shrink to
+  // stubs near the top anyway.
+  const stance = getStance(rigCostume);
+  const armPose = stance.arms;
   const t = Math.max(0, Math.min(1, inflated / 100));
   const inflating = inflated > 0;
 
@@ -192,6 +244,17 @@ export default function SproutyRig({
   const faceLift = t * 6;
   // Floret rides up off the swelling body.
   const floretLift = t * 8;
+
+  // STANCE EASE — how much of the costume's dramatic pose (kick legs + body tilt)
+  // is in effect. Full strength at rest (1), eased OUT to 0 by ~70% inflation so
+  // the kick has fully relaxed into the calm standing default before he rounds
+  // into a balloon. (Arms are NOT eased here — they have their own brace ramp.)
+  const stanceEase = 1 - Math.min(1, t / 0.7);
+  // The two legs, eased from the costume stance toward the standing default.
+  const legLeft = lerpLeg(DEFAULT_STANCE_LEGS.left, stance.legs.left, stanceEase);
+  const legRight = lerpLeg(DEFAULT_STANCE_LEGS.right, stance.legs.right, stanceEase);
+  // Whole-body lean, eased out with the rest of the stance.
+  const bodyTilt = stance.bodyTilt * stanceEase;
 
   // HAT motion (rig-native cosmetics). The hat is a SIBLING of the floret group
   // (not a child) so it does NOT inherit the floret's squish. HOW it rides the
@@ -262,6 +325,14 @@ export default function SproutyRig({
           opacity="0.12"
         />
 
+        {/* ══ BODY TILT — the whole character leans per the costume stance (the
+            ninja leans BACK to counterweight his front-kick). Hinged near the
+            PLANTED (left) foot at (52,120) so he pivots like he's balancing on it,
+            not spinning about his middle. Static (no animation); eased to 0 with
+            the rest of the stance as he inflates, so a plain/ballooning Sprouty is
+            perfectly upright. Wraps the tremble group so the shake rides the lean.
+            The ground shadow stays OUTSIDE this, so it stays flat on the floor. */}
+        <g transform={bodyTilt ? `rotate(${bodyTilt} 52 120)` : undefined}>
         {/* Everything that should shake under pressure lives in this group.
             Below the shake threshold it does the calm idle bob instead, so the
             early "just growing" phase stays relaxed. */}
@@ -303,42 +374,43 @@ export default function SproutyRig({
             </motion.g>
           )}
 
-          {/* ══ LEGS — stubby legs descending from the body, feet angled outward
-              (like the reference's little splayed stance). The leg is a tapered
-              limb; the foot is an ellipse pointing out. They splay + drop as the
-              body inflates so they keep bracing underneath it. ══ */}
+          {/* ══ LEGS — data-driven from the costume STANCE (legGeom twin of armGeom).
+              Default = stubby splayed standing legs (unchanged from before); the
+              ninja PLANTS the left leg and KICKS the right up high. Each leg is a
+              hip→bowed-knee→foot quadratic anchored to the body center, riding the
+              inflation splay/drop and shrinking to a stub near max. The pose has
+              already eased back to the standing default by ~70% inflation. ══ */}
           {(() => {
             const legW = 9 * limbScale;        // legs shrink near max like arms
-            const leftLegD = `M ${53 - footSpread * 0.4},108 Q ${50 - footSpread * 0.7},116 ${49 - footSpread},${120 + footDrop}`;
-            const rightLegD = `M ${67 + footSpread * 0.4},108 Q ${70 + footSpread * 0.7},116 ${71 + footSpread},${120 + footDrop}`;
+            // footSpread/footDrop ride the inflation; legGeom folds them into the
+            // knee + foot so the legs brace under the ballooning body as before.
+            const left = legGeom(BODY_CX, -1, limbScale, footSpread, footDrop, legLeft);
+            const right = legGeom(BODY_CX, +1, limbScale, footSpread, footDrop, legRight);
             const footRx = 10 * limbScale;
             const footRy = 5.5 * limbScale;
+            const renderLeg = (leg: typeof left) => (
+              <>
+                {/* leg (outline under + fill over) */}
+                <path d={leg.d} fill="none" stroke={OUTLINE} strokeWidth={legW + 3} strokeLinecap="round" />
+                <path d={leg.d} fill="none" stroke={STALK} strokeWidth={legW} strokeLinecap="round" />
+                {/* costume leg-wrap: a slightly wider black stroke OVER the green leg
+                    (drawn before the foot ellipse → feet stay green) */}
+                {rigCostume && (
+                  <>
+                    <path d={leg.d} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={legW + 4} strokeLinecap="round" />
+                    <path d={leg.d} fill="none" stroke={GI_STROKE} strokeWidth={legW + 1} strokeLinecap="round" />
+                  </>
+                )}
+                {/* foot — ellipse at the leg's end, pointed per the pose */}
+                <ellipse cx={leg.footX} cy={leg.footY} rx={footRx} ry={footRy}
+                  fill={STALK_DARK} stroke={OUTLINE} strokeWidth="2.5"
+                  transform={`rotate(${leg.footRot} ${leg.footX} ${leg.footY})`} />
+              </>
+            );
             return (
               <g>
-                {/* left leg (outline under + fill over) + outward foot */}
-                <path d={leftLegD} fill="none" stroke={OUTLINE} strokeWidth={legW + 3} strokeLinecap="round" />
-                <path d={leftLegD} fill="none" stroke={STALK} strokeWidth={legW} strokeLinecap="round" />
-                {/* costume leg-wrap: a slightly wider black stroke OVER the green leg
-                    (skips the foot ellipse → feet stay green) */}
-                {rigCostume && (
-                  <>
-                    <path d={leftLegD} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={legW + 4} strokeLinecap="round" />
-                    <path d={leftLegD} fill="none" stroke={GI_STROKE} strokeWidth={legW + 1} strokeLinecap="round" />
-                  </>
-                )}
-                <ellipse cx={45 - footSpread} cy={122 + footDrop} rx={footRx} ry={footRy}
-                  fill={STALK_DARK} stroke={OUTLINE} strokeWidth="2.5" transform={`rotate(-12 ${45 - footSpread} ${122 + footDrop})`} />
-                {/* right leg + outward foot */}
-                <path d={rightLegD} fill="none" stroke={OUTLINE} strokeWidth={legW + 3} strokeLinecap="round" />
-                <path d={rightLegD} fill="none" stroke={STALK} strokeWidth={legW} strokeLinecap="round" />
-                {rigCostume && (
-                  <>
-                    <path d={rightLegD} fill="none" stroke={GI_STROKE_OUTLINE} strokeWidth={legW + 4} strokeLinecap="round" />
-                    <path d={rightLegD} fill="none" stroke={GI_STROKE} strokeWidth={legW + 1} strokeLinecap="round" />
-                  </>
-                )}
-                <ellipse cx={75 + footSpread} cy={122 + footDrop} rx={footRx} ry={footRy}
-                  fill={STALK_DARK} stroke={OUTLINE} strokeWidth="2.5" transform={`rotate(12 ${75 + footSpread} ${122 + footDrop})`} />
+                {renderLeg(left)}
+                {renderLeg(right)}
               </g>
             );
           })()}
@@ -586,6 +658,7 @@ export default function SproutyRig({
           )}
         </g>
         </motion.g>
+        </g>{/* ── end BODY TILT ── */}
       </svg>
     </div>
   );
