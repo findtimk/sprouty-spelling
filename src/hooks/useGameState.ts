@@ -6,6 +6,9 @@ import { shuffle } from '../utils/shuffle';
 
 const WORDS_PER_LEVEL = 10;
 const SEEN_WORDS_KEY = 'sprouty_seen_words';
+// How many recently-seen words to block from re-appearing.
+// ~60% of each pool (100 words), so a kid plays ~6 levels before any word cycles back.
+const SEEN_WINDOW_SIZE = 60;
 
 const STARS_PER_WORD: Record<Difficulty, number> = {
   easy: 1,
@@ -13,36 +16,36 @@ const STARS_PER_WORD: Record<Difficulty, number> = {
   hard: 3,
 };
 
-/** Pick words prioritizing ones the user hasn't seen recently */
+/** Pick words the kid hasn't seen recently, using a rolling window per difficulty. */
 function pickFreshWords(allWords: WordEntry[], difficulty: Difficulty, count: number): WordEntry[] {
-  // Load seen words from localStorage
   let seenMap: Record<string, string[]> = {};
   try {
     const stored = window.localStorage.getItem(SEEN_WORDS_KEY);
     if (stored) seenMap = JSON.parse(stored);
   } catch { /* ignore */ }
 
-  const seenSet = new Set(seenMap[difficulty] || []);
+  // recentSeen is ordered oldest→newest; words in this list are blocked
+  const recentSeen: string[] = seenMap[difficulty] || [];
+  const blockedSet = new Set(recentSeen);
 
-  // Split into unseen and seen
-  const unseen = allWords.filter(w => !seenSet.has(w.word));
-  const seen = allWords.filter(w => seenSet.has(w.word));
+  const fresh = allWords.filter(w => !blockedSet.has(w.word));
+  const stale = allWords.filter(w => blockedSet.has(w.word));
 
   let picked: WordEntry[];
-  if (unseen.length >= count) {
-    // Plenty of fresh words — pick randomly from unseen only
-    picked = shuffle(unseen).slice(0, count);
+  if (fresh.length >= count) {
+    picked = shuffle(fresh).slice(0, count);
   } else {
-    // Use all unseen words, then fill from seen (shuffled for variety)
-    picked = [...shuffle(unseen), ...shuffle(seen)].slice(0, count);
-    // Reset the seen list since we've exhausted the pool
-    seenMap[difficulty] = [];
+    // Not enough fresh words — fill remainder from the oldest stale ones
+    // (oldest = front of recentSeen array, so they've been away the longest)
+    const staleByAge = recentSeen
+      .map(w => stale.find(e => e.word === w))
+      .filter((e): e is WordEntry => e !== undefined);
+    picked = [...shuffle(fresh), ...staleByAge].slice(0, count);
   }
 
-  // Record these words as seen
-  const currentSeen = seenMap[difficulty] || [];
-  const newSeen = [...currentSeen, ...picked.map(w => w.word)];
-  seenMap[difficulty] = newSeen;
+  // Append picked words to the back of the window, drop from the front to stay within limit
+  const newWindow = [...recentSeen, ...picked.map(w => w.word)].slice(-SEEN_WINDOW_SIZE);
+  seenMap[difficulty] = newWindow;
   try {
     window.localStorage.setItem(SEEN_WORDS_KEY, JSON.stringify(seenMap));
   } catch { /* ignore */ }
